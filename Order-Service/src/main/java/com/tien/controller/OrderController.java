@@ -20,10 +20,10 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    @PostMapping("/create")
-    public ResponseEntity<Order> createOrder(@RequestBody OrderRequest orderRequest) {
-        Order order = orderService.createOrder(orderRequest.getUserId(),orderRequest.getTableId(), orderRequest.getOrderDetails());
-        return new ResponseEntity<>(order, HttpStatus.CREATED);
+    @PostMapping("/{tableId}/create")
+    public ResponseEntity<Order> createOrder(@PathVariable Long tableId, @RequestBody Order order) {
+        Order newOrder = orderService.createOrder(tableId,order);
+        return new ResponseEntity<>(newOrder, HttpStatus.CREATED);
     }
 
     @GetMapping("/{orderId}/details")

@@ -21,6 +21,7 @@ public class OrderDetail {
     private Long menuId;
     private Integer quantity;
     private Double price;
+    private String status; // PENDING, IN_PROGRESS, COMPLETED
 
     @ManyToOne
     @JoinColumn(name = "order_id")
