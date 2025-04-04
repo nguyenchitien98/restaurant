@@ -3,10 +3,12 @@ package com.tien.service;
 import com.tien.client.MenuClient;
 import com.tien.dto.event.OrderDetailEvent;
 import com.tien.dto.event.OrderEvent;
+import com.tien.dto.event.OrderEventStatus;
 import com.tien.service.kafka.OrderKafkaProducer;
 import com.tien.model.*;
 import com.tien.repository.OrderDetailRepository;
 import com.tien.repository.OrderRepository;
+import com.tien.service.kafka.OrderStatusProducer;
 import com.tien.websocket.OrderWebSocketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -26,6 +28,7 @@ public class OrderService {
     private final OrderWebSocketService orderWebSocketService;
     private final OrderKafkaProducer orderKafkaProducer;
     private final KafkaTemplate<String, OrderEvent> kafkaTemplate;
+    private final OrderStatusProducer orderStatusProducer;
 
 
     // Tạo mới order cho bàn
@@ -81,6 +84,11 @@ public class OrderService {
             Order order = orderRepository.findById(orderId).orElseThrow();
             order.setStatus(OrderStatus.COMPLETED);
             orderRepository.save(order);
+            OrderEventStatus orderEventStatus = new OrderEventStatus();
+            orderEventStatus.setOrderId(orderId);
+            orderEventStatus.setStatus(OrderStatus.COMPLETED);
+            orderEventStatus.setTotalAmount(order.getTotalPrice());
+            orderStatusProducer.sendOrderStatusToInvoice(orderEventStatus);
         }
     }
 
