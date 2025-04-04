@@ -5,6 +5,8 @@ import com.tien.repository.InvoiceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -25,5 +27,9 @@ public class InvoiceService {
     public Invoice getInvoiceByOrderId(Long orderId) {
         Optional<Invoice> invoice = invoiceRepository.findByOrderId(orderId);
         return invoice.orElse(null);
+    }
+
+    public List<Invoice> getInvoicesByDateRange(LocalDate start, LocalDate end) {
+        return invoiceRepository.findByCreatedAtBetween(start,end);
     }
 }
