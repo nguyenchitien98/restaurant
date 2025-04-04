@@ -16,5 +16,5 @@ public class KitchenOrder {
     private Long kitchen_orders_id;
     private String dish;
     private Integer quantity;
-    private String status; // IN_PROGRESS, COMPLETED
+    private String status; // 'PENDING', 'IN_PROGRESS', 'READY', 'COMPLETED'
 }

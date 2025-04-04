@@ -19,13 +19,13 @@ import java.util.List;
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "order_id")
     private Long orderId;
 
     private Long userId;
     private Double totalPrice;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM(PENDING,CONFIRMED,COOKING,COMPLETED,CANCELLED")
     private OrderStatus status;
 
     @ManyToOne
@@ -33,6 +33,6 @@ public class Order {
     @JsonIgnore
     private RestaurantTable table; // Mỗi order sẽ liên kết với một bàn
 
-    @OneToMany(mappedBy = "order", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "order",orphanRemoval = true,cascade = CascadeType.ALL)
     private List<OrderDetail> orderDetails; // Chi tiết món ăn trong order
 }

@@ -39,6 +39,8 @@ public class OrderService {
             if (item == null){
                 throw new RuntimeException("Menu item not found: " + orderDetail.getMenuId());
             }
+            orderDetail.setOrder(order);
+            orderDetail.setStatus(OrderDetailStatus.PENDING);
         }
 
         order.setTable(table);
@@ -65,7 +67,7 @@ public class OrderService {
         OrderDetail orderDetail = orderDetailRepository.findById(orderDetailId)
                 .orElseThrow(() -> new RuntimeException("OrderDetail not found"));
 
-        orderDetail.setStatus("COMPLETED");
+        orderDetail.setStatus(OrderDetailStatus.COMPLETED);
         orderDetailRepository.save(orderDetail);
 
         // Kiểm tra nếu tất cả món đã hoàn thành thì cập nhật Order
@@ -73,7 +75,7 @@ public class OrderService {
         boolean allCompleted = orderDetailRepository
                 .findByOrder_OrderId(orderId)
                 .stream()
-                .allMatch(d -> d.getStatus().equals("COMPLETED"));
+                .allMatch(d -> d.getStatus().equals(OrderDetailStatus.COMPLETED));
 
         if (allCompleted) {
             Order order = orderRepository.findById(orderId).orElseThrow();

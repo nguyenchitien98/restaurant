@@ -16,17 +16,22 @@ public class KitchenService {
 
     public void processOrder(OrderEvent event) {
         for (OrderDetailEvent detailEvent : event.getOrderDetails()) {
-            KitchenOrder kitchenOrder = new KitchenOrder(
-                    detailEvent.getOrderDetailId(),
-                    detailEvent.getDish(),
-                    detailEvent.getQuantity(),
-                    "IN_PROGRESS"
-            );
-            kitchenOrderRepository.save(kitchenOrder);
+//            KitchenOrder kitchenOrder = new KitchenOrder(
+//                    detailEvent.getOrderDetailId(),
+//                    detailEvent.getDish(),
+//                    detailEvent.getQuantity(),
+//                    "IN_PROGRESS"
+//            );
+            KitchenOrder kitchenOrder = new KitchenOrder();
+            kitchenOrder.setDish(detailEvent.getDish());
+            kitchenOrder.setQuantity(detailEvent.getQuantity());
+            kitchenOrder.setStatus("IN_PROGRESS");
 
-            // Giả lập chế biến món ăn (2s)
+
+            kitchenOrderRepository.save(kitchenOrder);
+            // Giả lập chế biến món ăn (5s)
             try {
-                Thread.sleep(3000);
+                Thread.sleep(5000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
