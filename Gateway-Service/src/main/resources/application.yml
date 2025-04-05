@@ -1,0 +1,14 @@
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: Gateway-Service
+
+  cloud:
+    gateway:
+      default-filters:
+        - JwtAuthenticationFilter
+
+
