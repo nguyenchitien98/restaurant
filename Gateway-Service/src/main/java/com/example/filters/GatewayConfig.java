@@ -10,13 +10,13 @@ public class GatewayConfig {
     @Bean
     public RouteLocator routes(RouteLocatorBuilder builder) {
         return builder.routes()
-                .route("auth", r -> r.path("/auth/**")
+                .route("auth", r -> r.path("/api/auth/**")
                         .uri("lb://auth-service"))
-                .route("order", r -> r.path("/order/**")
-                        .uri("lb://order-service"))
-                .route("kitchen", r -> r.path("/kitchen/**")
+                .route("order", r -> r.path("/api/orders/**")
+                        .uri("lb://Order-Service"))
+                .route("kitchen", r -> r.path("/api/kitchen/**")
                         .uri("lb://kitchen-service"))
-                .route("report", r -> r.path("/report/**")
+                .route("report", r -> r.path("/api/report/**")
                         .uri("lb://report-service"))
                 .build();
     }
