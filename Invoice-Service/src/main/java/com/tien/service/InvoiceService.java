@@ -32,4 +32,20 @@ public class InvoiceService {
     public List<Invoice> getInvoicesByDateRange(LocalDate start, LocalDate end) {
         return invoiceRepository.findByCreatedAtBetween(start,end);
     }
+
+    public List<Invoice> getInvoicesByDay(LocalDate date) {
+        return invoiceRepository.getRevenueByDay(date);
+    }
+
+    public List<Invoice> getInvoicesByDayRange(LocalDate start, LocalDate end) {
+        return invoiceRepository.getRevenueByDayRange(start, end);
+    }
+
+    public List<Invoice> getInvoicesByMonth(LocalDate startDate, LocalDate endDate) {
+        return invoiceRepository.getRevenueByMonth(startDate, endDate);
+    }
+
+    public List<Invoice> getInvoicesByYear(LocalDate startDate, LocalDate endDate) {
+        return invoiceRepository.getRevenueByYear(startDate, endDate);
+    }
 }

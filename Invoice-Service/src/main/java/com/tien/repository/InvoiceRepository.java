@@ -19,24 +19,33 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     // Tổng doanh thu trong khoảng thời gian bằng JPQL ( JPQL giống với SQL nhưng sử dụng các tên đối tượng Java thay vì tên bảng cơ sở dữ liệu. )
     @Query("SELECT SUM(i.totalAmount) FROM Invoice i WHERE i.createdAt BETWEEN :start AND :end")
-    Double sumRevenueBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    Double sumRevenueBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
-    // Doanh thu theo ngày bằng navtive queries
-    @Query(value = "SELECT DATE(i.createdAt) as date, SUM(i.totalAmount) as total " +
-            "FROM Invoice i WHERE i.createdAt BETWEEN :start AND :end " +
-            "GROUP BY DATE(i.createdAt) ORDER BY DATE(i.createdAt)",nativeQuery = true)
-    List<Object[]> getDailyRevenue(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+//     Doanh thu theo ngày bằng navtive queries
+    @Query(value = "SELECT DATE(created_at) as date, SUM(total_amount) as total " +
+            "FROM restaurant_db.invoices WHERE created_at BETWEEN :start AND :end " +
+            "GROUP BY DATE(created_at) ORDER BY DATE(created_at)",nativeQuery = true)
+    List<Invoice> getRevenueByDayRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+//     Doanh thu theo ngày bằng navtive queries
+    @Query(value = "SELECT date(created_at) AS date, SUM(total_amount) AS totalRevenue\n" +
+            "FROM restaurant_db.invoices where date(created_at) like :date \n" +
+            "GROUP BY date(created_at)\n" +
+            "ORDER BY date;",nativeQuery = true)
+    List<Invoice> getRevenueByDay(@Param("date") LocalDate date);
 
     // Doanh thu theo tháng bằng navtive queries
-    @Query(value = "SELECT FUNCTION('YEAR', i.createdAt) as year, FUNCTION('MONTH', i.createdAt) as month, SUM(i.totalAmount) as total " +
-            "FROM Invoice i WHERE i.createdAt BETWEEN :start AND :end " +
-            "GROUP BY FUNCTION('YEAR', i.createdAt), FUNCTION('MONTH', i.createdAt) " +
-            "ORDER BY year, month", nativeQuery = true)
-    List<Object[]> getMonthlyRevenue(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    @Query(value = "SELECT YEAR(created_at) AS year, month(created_at) as month, SUM(Invoice.totalAmount) as total\n" +
+            "            FROM restaurant_db.invoices WHERE created_att BETWEEN :start AND :end \n" +
+            "            GROUP BY YEAR(created_at), month(created_at) as month\n" +
+            "            ORDER BY year, month", nativeQuery = true)
+    List<Invoice> getRevenueByMonth(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
 
     // Doanh thu theo năm bằng navtive queries
-    @Query(value = "SELECT FUNCTION('YEAR', i.createdAt) as year, SUM(i.totalAmount) as total " +
-            "FROM Invoice i WHERE i.createdAt BETWEEN :start AND :end " +
-            "GROUP BY FUNCTION('YEAR', i.createdAt) ORDER BY year",nativeQuery = true)
-    List<Object[]> getYearlyRevenue(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    @Query(value = "SELECT year(created_at) as year, sum(total_amount) as total\n" +
+            "            FROM restaurant_db.invoices WHERE created_at BETWEEN :start AND :end \n" +
+            "            GROUP BY year\n" +
+            "            ORDER BY year",nativeQuery = true)
+    List<Invoice> getRevenueByYear(@Param("start") LocalDate start, @Param("end") LocalDate end);
 }
