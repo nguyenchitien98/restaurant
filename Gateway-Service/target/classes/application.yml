@@ -13,7 +13,20 @@ spring:
 
   cloud:
     gateway:
-      default-filters:
-        - JwtAuthenticationFilter
-
+#      default-filters:
+#        - JwtAuthenticationFilter
+#      global-cors:
+#        add-to-simple-url-handler-mapping: true
+#        corsConfigurations:
+#          '[/**]':
+#            allowedOrigins:
+#              - "http://localhost:3000" # Frontend của bạn
+#            allowedMethods:
+#              - GET
+#              - POST
+#              - PUT
+#              - DELETE
+#              - OPTIONS
+#            allowedHeaders: "*"
+#            allowCredentials: true
 
