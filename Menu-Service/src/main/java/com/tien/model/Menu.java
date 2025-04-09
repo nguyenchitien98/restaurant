@@ -20,7 +20,14 @@ public class Menu {
     private Long menuId;
 
     private String name;
+
     private String description;
+
+    private String imageUrl;
+
     private BigDecimal price;
+
     private String category;
+
+    private String ingredient; // Nguyên liệu
 }
