@@ -24,7 +24,7 @@ public class GatewayConfig {
 //                        .uri("lb://Report-Service"))
                 .route("user", r -> r.path("/api/users/**")
                         .uri("http://localhost:8081"))
-                .route("order", r -> r.path("/api/orders/**")
+                .route("order", r -> r.path("/api/orders/**","/api/tables/**","/api/order-details/**")
                         .uri("http://localhost:8083"))
                 .route("menu", r -> r.path("/api/menus/**","/uploads/**")
                         .uri("http://localhost:8082"))
