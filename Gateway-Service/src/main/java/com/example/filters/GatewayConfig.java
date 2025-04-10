@@ -26,7 +26,7 @@ public class GatewayConfig {
                         .uri("http://localhost:8081"))
                 .route("order", r -> r.path("/api/orders/**")
                         .uri("http://localhost:8083"))
-                .route("menu", r -> r.path("/api/menus/**")
+                .route("menu", r -> r.path("/api/menus/**","/uploads/**")
                         .uri("http://localhost:8082"))
                 .route("kitchen", r -> r.path("/api/kitchens/**")
                         .uri("http://localhost:8084"))
