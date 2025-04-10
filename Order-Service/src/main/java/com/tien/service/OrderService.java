@@ -15,6 +15,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -64,6 +65,70 @@ public class OrderService {
         kafkaTemplate.send("kitchen-orders", event);
 
         return savedOrder;
+    }
+
+    public Order createOrUpdateOrder(Long tableId,Long userId, List<OrderDetail> orderDetailList, String note) {
+        // 1. Kiểm tra xem bàn đã có order chưa thanh toán chưa
+        RestaurantTable table = tableService.getAllTables().stream()
+                .filter(t -> t.getTable_id().equals(tableId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Table not found"));
+        Optional<Order> existingOrderOpt = orderRepository.findByTableAndStatus(table,OrderStatus.PENDING);
+
+        if (existingOrderOpt.isPresent()) {
+            Order existingOrder = existingOrderOpt.get();
+
+            // 2. Gộp món mới vào đơn cũ
+            for (OrderDetail itemsOrderDetail : orderDetailList) {
+                Optional<OrderDetail> existingOrderDetail = existingOrder.getOrderDetails().stream()
+                        .filter(i -> i.getMenuId().equals(itemsOrderDetail.getMenuId()))
+                        .findFirst();
+
+                if (existingOrderDetail.isPresent()) {
+                    OrderDetail item = existingOrderDetail.get();
+                    item.setQuantity(item.getQuantity() + itemsOrderDetail.getQuantity());
+                } else {
+                    OrderDetail newItem = new OrderDetail();
+                    newItem.setMenuId(itemsOrderDetail.getMenuId());
+                    newItem.setQuantity(itemsOrderDetail.getQuantity());
+                    newItem.setPrice(itemsOrderDetail.getPrice());
+                    newItem.setOrder(existingOrder);
+                    existingOrder.getOrderDetails().add(newItem);
+                }
+            }
+            // Đặt lại tổng tiền sau khi đã xử lý tất cả món
+            double total = existingOrder.getOrderDetails().stream()
+                    .mapToDouble(od -> od.getPrice() * od.getQuantity())
+                    .sum();
+            existingOrder.setTotalPrice(total);
+
+            if (note != null && !note.isEmpty()) {
+                existingOrder.setNote(existingOrder.getNote() + " | " + note);
+            }
+
+           return orderRepository.save(existingOrder);
+        } else {
+            // 3. Tạo đơn mới
+            Order newOrder = new Order();
+            newOrder.setTable(table);
+            newOrder.setUserId(userId);
+            newOrder.setStatus(OrderStatus.PENDING);
+            newOrder.setTotalPrice(orderDetailList.stream().mapToDouble(od -> od.getPrice() * od.getQuantity()).sum());
+            newOrder.setNote(note);
+
+            List<OrderDetail> itemEntities = orderDetailList.stream().map(dto -> {
+                OrderDetail item = new OrderDetail();
+                item.setMenuId(dto.getMenuId());
+                item.setQuantity(dto.getQuantity());
+                item.setPrice(dto.getPrice());
+                item.setStatus(OrderDetailStatus.PENDING);
+                item.setOrder(newOrder);
+                return item;
+            }).collect(Collectors.toList());
+
+            newOrder.setOrderDetails(itemEntities);
+           return orderRepository.save(newOrder);
+        }
     }
 
     public void completeOrderDetail(Long orderDetailId) {

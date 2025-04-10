@@ -1,8 +1,6 @@
 package com.tien.controller;
 
-import com.tien.dto.request.OrderRequest;
 import com.tien.dto.request.TableRequest;
-import com.tien.model.Order;
 import com.tien.model.RestaurantTable;
 import com.tien.service.TableService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +26,6 @@ public class TableController {
     @GetMapping
     public ResponseEntity<List<RestaurantTable>> getAllTables() {
         List<RestaurantTable> restaurantTable = tableService.getAllTables();
-        return ResponseEntity.status(HttpStatus.CREATED).body(restaurantTable);
+        return ResponseEntity.ok(restaurantTable);
     }
 }

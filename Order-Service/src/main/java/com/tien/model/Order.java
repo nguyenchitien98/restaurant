@@ -24,6 +24,7 @@ public class Order {
 
     private Long userId;
     private Double totalPrice;
+    private String note;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus status;

@@ -12,4 +12,5 @@ public class OrderRequest {
     private Long tableId;
     private Long userId;
     private List<OrderDetail> orderDetails;
+    private String note;
 }

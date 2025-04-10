@@ -3,8 +3,9 @@ CREATE TABLE orders (
                         user_id INT NOT NULL,
                         table_id INT NOT NULL,
                         total_price DECIMAL(10,2),
+                        note VARCHAR(100),
 #                         status VARCHAR(50) DEFAULT 'PENDING',
-                        status ENUM('PENDING', 'CONFIRMED', 'COOKING', 'COMPLETED', 'CANCELLED') DEFAULT 'PENDING',
+                        status ENUM('PENDING', 'COMPLETED', 'CANCELLED', 'PAID') DEFAULT 'PENDING',
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 #                         FOREIGN KEY (user_id) REFERENCES users(user_id)

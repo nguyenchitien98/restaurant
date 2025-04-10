@@ -26,6 +26,17 @@ public class OrderController {
         return new ResponseEntity<>(newOrder, HttpStatus.CREATED);
     }
 
+    @PostMapping
+    public ResponseEntity<Order> createOrUpdateOrder(@RequestBody OrderRequest request) {
+        Order newOrder = orderService.createOrUpdateOrder(
+                request.getTableId(),
+                request.getUserId(),
+                request.getOrderDetails(),
+                request.getNote()
+        );
+        return ResponseEntity.ok(newOrder);
+    }
+
     @GetMapping("/{orderId}/details")
     public ResponseEntity<List<OrderDetail>> getOrderDetails(@PathVariable Long orderId) {
         List<OrderDetail> orderDetails = orderService.getOrderDetails(orderId);
