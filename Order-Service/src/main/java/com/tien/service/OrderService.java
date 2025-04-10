@@ -4,6 +4,8 @@ import com.tien.client.MenuClient;
 import com.tien.dto.event.OrderDetailEvent;
 import com.tien.dto.event.OrderEvent;
 import com.tien.dto.event.OrderEventStatus;
+import com.tien.dto.response.OrderItemDTO;
+import com.tien.dto.response.OrderResponseDTO;
 import com.tien.service.kafka.OrderKafkaProducer;
 import com.tien.model.*;
 import com.tien.repository.OrderDetailRepository;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -115,6 +118,7 @@ public class OrderService {
             newOrder.setStatus(OrderStatus.PENDING);
             newOrder.setTotalPrice(orderDetailList.stream().mapToDouble(od -> od.getPrice() * od.getQuantity()).sum());
             newOrder.setNote(note);
+            newOrder.setCreatedAt(LocalDate.now());
 
             List<OrderDetail> itemEntities = orderDetailList.stream().map(dto -> {
                 OrderDetail item = new OrderDetail();
@@ -173,8 +177,28 @@ public class OrderService {
                 .orElseThrow(() -> new RuntimeException("Table not found"));
     }
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    public List<OrderResponseDTO> getAllOrders() {
+        List<Order> orders = orderRepository.findAll();
+
+        return orders.stream().map(order -> {
+            OrderResponseDTO dto = new OrderResponseDTO();
+            dto.setTableNumber(order.getTable().getTable_number());
+            dto.setNote(order.getNote());
+            dto.setStatus(order.getStatus());
+            dto.setCreatedAt(order.getCreatedAt());
+
+            List<OrderItemDTO> items = order.getOrderDetails().stream().map(detail -> {
+                Menu menu = menuClient.getMenuById(detail.getMenuId());
+                OrderItemDTO itemDTO = new OrderItemDTO();
+                itemDTO.setMenuName(menu.getName());
+                itemDTO.setQuantity(detail.getQuantity());
+                itemDTO.setPrice(menu.getPrice());
+                return itemDTO;
+            }).collect(Collectors.toList());
+
+            dto.setItems(items);
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     public Order getOrderById(Long orderId) {

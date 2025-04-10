@@ -1,5 +1,6 @@
 package com.tien.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +24,7 @@ public class RestaurantTable {
     private Integer capacity;
 
     @OneToMany(mappedBy = "table", fetch = FetchType.LAZY)
+    @JsonBackReference
     private List<Order> orders;
 
 }

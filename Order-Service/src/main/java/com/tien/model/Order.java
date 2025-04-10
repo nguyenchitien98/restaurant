@@ -1,7 +1,6 @@
 package com.tien.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -35,7 +34,7 @@ public class Order {
 
     @ManyToOne
     @JoinColumn(name = "table_id")
-    @JsonIgnore
+    @JsonManagedReference
     private RestaurantTable table; // Mỗi order sẽ liên kết với một bàn
 
     @OneToMany(mappedBy = "order",orphanRemoval = true,cascade = CascadeType.ALL)

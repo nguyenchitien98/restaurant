@@ -2,6 +2,7 @@ package com.tien.controller;
 
 
 import com.tien.dto.request.OrderRequest;
+import com.tien.dto.response.OrderResponseDTO;
 import com.tien.model.Order;
 import com.tien.model.OrderDetail;
 import com.tien.model.OrderStatus;
@@ -44,8 +45,8 @@ public class OrderController {
     }
 
     @GetMapping
-    public List<Order> getAllOrders() {
-        return orderService.getAllOrders();
+    public ResponseEntity<List<OrderResponseDTO>> getAllOrders() {
+        return ResponseEntity.ok(orderService.getAllOrders());
     }
 
     @GetMapping("/{id}")
