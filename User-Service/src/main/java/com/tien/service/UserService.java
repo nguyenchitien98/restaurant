@@ -16,22 +16,14 @@ import java.util.stream.Collectors;
 public class UserService {
     private final UserRepository userRepository;
 
-    public UserResponse createUser(UserRequest userRequest) {
-        User user = UserMapper.mapToUser(userRequest);
-        User savedUser = userRepository.save(user);
 
-        return UserMapper.mapToUserResponse(savedUser);
-    }
 
     public UserResponse getUserById(Long userId) {
         User user = userRepository.findByUserId(userId);
         return UserMapper.mapToUserResponse(user);
     }
 
-    public UserResponse getUserByUsername(String username) {
-        User user = userRepository.findByUsername(username);
-        return UserMapper.mapToUserResponse(user);
-    }
+
 
     public UserResponse getUserByEmail(String email) {
         User user = userRepository.findByEmail(email);

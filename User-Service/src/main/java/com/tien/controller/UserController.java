@@ -24,17 +24,6 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<UserResponse> registerUser(@RequestBody UserRequest user) {
-        return new ResponseEntity<>(userService.createUser(user), HttpStatus.CREATED);
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<UserResponse> loginUser(@RequestBody LoginRequest request) {
-        // Logic login (sẽ làm tiếp trong phần xác thực)
-        UserResponse user = userService.getUserByUsername(request.getUsername());
-        return ResponseEntity.ok(user);
-    }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
