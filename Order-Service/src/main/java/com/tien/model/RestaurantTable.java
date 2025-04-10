@@ -19,8 +19,8 @@ public class RestaurantTable {
     private Integer table_number; // Tên bàn (ví dụ: Bàn 1, Bàn 2, ...)
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('AVAILABLE', 'OCCUPIED', 'RESERVED', 'EMPTY') DEFAULT 'AVAILABLE'")
-    private TableStatus status; // Trạng thái: TRỐNG, ĐÃ CÓ KHÁCH, ĐẶT TRƯỚC, v.v.
+    @Column(columnDefinition = "ENUM('OCCUPIED', 'RESERVED', 'EMPTY') DEFAULT 'EMPTY'")
+    private TableStatus status; // Trạng thái: EMPTY:TRỐNG, OCCUPIED: ĐÃ CÓ KHÁCH, RESERVED: ĐẶT TRƯỚC, v.v.
     private Integer capacity;
 
     @OneToMany(mappedBy = "table", fetch = FetchType.LAZY)

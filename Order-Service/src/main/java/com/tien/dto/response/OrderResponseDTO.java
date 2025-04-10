@@ -12,6 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderResponseDTO {
+    private Long tableId;
     private Integer tableNumber;
     private List<OrderItemDTO> items;
     private String note;

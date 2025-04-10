@@ -182,6 +182,7 @@ public class OrderService {
 
         return orders.stream().map(order -> {
             OrderResponseDTO dto = new OrderResponseDTO();
+            dto.setTableId(order.getTable().getTable_id());
             dto.setTableNumber(order.getTable().getTable_number());
             dto.setNote(order.getNote());
             dto.setStatus(order.getStatus());
