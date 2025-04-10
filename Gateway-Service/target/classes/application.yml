@@ -11,9 +11,5 @@ spring:
   application:
     name: Gateway-Service
 
-  cloud:
-    gateway:
-      default-filters:
-        - JwtAuthenticationFilter
 
 
