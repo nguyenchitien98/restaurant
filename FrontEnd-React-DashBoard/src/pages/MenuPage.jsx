@@ -1,265 +1,257 @@
-import { useState } from "react";
-import { useTranslation, initReactI18next } from "react-i18next";
-import i18n from "i18next";
-
-const resources = {
-  vi: {
-    translation: {
-      "Menu Management": "Quản lý thực đơn",
-      "Add": "Thêm",
-      "Update": "Sửa",
-      "Cancel": "Xóa",
-      "Name": "Tên món",
-      "Price": "Giá",
-      "Category": "Loại",
-      "Note": "Ghi chú",
-      "Ingredients": "Nguyên liệu",
-      "Image": "Ảnh",
-      "Revenue": "Doanh thu",
-      "Action": "Hành động",
-      "Main Dish": "Món chính",
-      "Starter": "Khai vị",
-      "Drink": "Đồ uống",
-      "Dessert": "Tráng miệng",
-      "All": "Tất cả",
-      "Delete Confirmation": "Bạn có chắc chắn muốn xoá món này không?",
-      "Total Revenue": "Tổng doanh thu từ món ăn",
-      "Statistics by Category": "Thống kê số lượng món theo loại"
-    }
-  },
-  en: {
-    translation: {
-      "Menu Management": "Menu Management",
-      "Add": "Add",
-      "Update": "Update",
-      "Cancel": "Cancel",
-      "Name": "Name",
-      "Price": "Price",
-      "Category": "Category",
-      "Note": "Note",
-      "Ingredients": "Ingredients",
-      "Image": "Image",
-      "Revenue": "Revenue",
-      "Action": "Action",
-      "Main Dish": "Main Dish",
-      "Starter": "Starter",
-      "Drink": "Drink",
-      "Dessert": "Dessert",
-      "All": "All",
-      "Delete Confirmation": "Are you sure you want to delete this dish?",
-      "Total Revenue": "Total revenue from dishes",
-      "Statistics by Category": "Dish count by category"
-    }
-  }
-};
-
-i18n.use(initReactI18next).init({
-  resources,
-  lng: "vi",
-  fallbackLng: "vi",
-  interpolation: { escapeValue: false }
-});
-
-const categoryMap = {
-  main: "Main Dish",
-  starter: "Starter",
-  drink: "Drink",
-  dessert: "Dessert"
-};
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const MenuPage = () => {
-  const { t, i18n } = useTranslation();
-
   const [userRole, setUserRole] = useState("admin");
-  const [menus, setMenus] = useState([
-    {
-      id: 1,
-      name: "Phở bò",
-      price: 45000,
-      category: "main",
-      note: "Nổi bật",
-      image: "/public/image/pho-bo.jpg",
-      ingredients: "Bò, bánh phở",
-      revenue: 120000
-    },
-    {
-      id: 2,
-      name: "pizza",
-      price: 34000,
-      category: "main",
-      note: "Nổi bật",
-      image: "",
-      ingredients: "Bò, bánh phở",
-      revenue: 120000
-    }
-  ]);
-
-  const [form, setForm] = useState({ name: "", price: "", category: "main", note: "", image: "", ingredients: "" });
+  const [menus, setMenus] = useState([]);
+  const [form, setForm] = useState({ name: "", price: "", category: "", description: "", imageUrl: "", ingredient: "" });
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("Tất cả");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
+  useEffect(() => {
+    axios.get("http://localhost:8080/api/menus")
+        .then(res => setMenus(res.data))
+        .catch(err => console.error("Lỗi khi lấy dữ liệu:", err));
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const resetForm = () => {
-    setForm({ name: "", price: "", category: "main", note: "", image: "", ingredients: "" });
-    setIsEditing(false);
-    setEditingId(null);
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
   };
 
-  const handleAdd = () => {
-    if (!form.name || !form.price) return;
-    const newItem = { ...form, id: Date.now(), price: parseFloat(form.price), revenue: 0 };
-    setMenus([...menus, newItem]);
-    resetForm();
+  const resetForm = () => {
+    setForm({ name: "", price: "", category: "", description: "", imageUrl: "", ingredient: "" });
+    setIsEditing(false);
+    setEditingId(null);
+    setSelectedFile(null);
+    setPreviewUrl("");
+  };
+
+  const handleSave = async () => {
+    let imageUrl = form.imageUrl;
+
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append("image", selectedFile);
+
+      try {
+        const res = await axios.post("http://localhost:8080/api/menus/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        imageUrl = res.data.imageUrl;
+      } catch (err) {
+        alert("Lỗi khi upload ảnh");
+        return;
+      }
+    }
+
+    const fullData = { ...form, imageUrl };
+
+    try {
+      if (isEditing) {
+        await axios.put(`http://localhost:8080/api/menus/${editingId}`, fullData);
+      } else {
+        await axios.post("http://localhost:8080/api/menus", fullData);
+      }
+      const updatedMenus = await axios.get("http://localhost:8080/api/menus");
+      setMenus(updatedMenus.data);
+      resetForm();
+    } catch (err) {
+      alert("Lỗi khi lưu món ăn");
+    }
   };
 
   const handleEdit = (item) => {
     setForm({ ...item });
     setIsEditing(true);
-    setEditingId(item.id);
+    setEditingId(item.menuId);
+    setPreviewUrl(item.imageUrl);
+    setSelectedFile(null);
   };
 
-  const handleUpdate = () => {
-    setMenus(menus.map((m) => (m.id === editingId ? { ...form, id: editingId, price: parseFloat(form.price) } : m)));
-    resetForm();
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm(t("Delete Confirmation"))) {
-      setMenus(menus.filter((m) => m.id !== id));
+  const handleDelete = async (id) => {
+    if (window.confirm("Bạn có chắc chắn muốn xoá món này không?")) {
+      try {
+        await axios.delete(`http://localhost:8080/api/menus/${id}`);
+        setMenus(menus.filter((m) => m.menuId !== id));
+      } catch (err) {
+        alert("Lỗi khi xoá món");
+      }
     }
   };
 
-  const filteredMenus = menus.filter((m) => {
-    return (
+  const filteredMenus = menus.filter((m) =>
       m.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterCategory === "all" || m.category === filterCategory)
-    );
-  });
+      (filterCategory === "Tất cả" || m.category === filterCategory)
+  );
 
-  const totalRevenue = menus.reduce((sum, item) => sum + item.revenue, 0);
   const countByCategory = menus.reduce((acc, item) => {
     acc[item.category] = (acc[item.category] || 0) + 1;
     return acc;
   }, {});
 
+  const totalPages = Math.ceil(filteredMenus.length / itemsPerPage);
+  const paginatedMenus = filteredMenus.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCategory]);
+
   return (
-    <div className="p-4 space-y-4 flex-1 relative z-10 overflow-auto md:p-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{t("Menu Management")}</h1>
-        <select value={i18n.language} onChange={(e) => i18n.changeLanguage(e.target.value)} className="border p-1 rounded text-gray-400">
-          <option value="vi">🇻🇳 Tiếng Việt</option>
-          <option value="en">🇺🇸 English</option>
-        </select>
-      </div>
+      <div className="p-4 space-y-4 flex-1 relative z-10 overflow-auto md:p-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Quản lý thực đơn</h1>
+        </div>
 
-      <div>
-        <label>🔐 Role: </label>
-        <select value={userRole} onChange={(e) => setUserRole(e.target.value)} className="border p-1 rounded text-gray-400">
-          <option value="admin">Admin</option>
-          <option value="chef">Chef</option>
-          <option value="staff">Staff</option>
-        </select>
-      </div>
-
-      {userRole === "admin" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input name="name" placeholder={t("Name")} value={form.name} onChange={handleChange} className="border p-2 rounded" />
-          <input name="price" type="number" placeholder={t("Price")} value={form.price} onChange={handleChange} className="border p-2 rounded" />
-          <select name="category" value={form.category} onChange={handleChange} className="border p-2 rounded text-gray-400">
-            <option value="main">{t("Main Dish")}</option>
-            <option value="starter">{t("Starter")}</option>
-            <option value="drink">{t("Drink")}</option>
-            <option value="dessert">{t("Dessert")}</option>
+        <div>
+          <label>🔐 Quyền: </label>
+          <select value={userRole} onChange={(e) => setUserRole(e.target.value)} className="border p-1 rounded text-gray-400">
+            <option value="admin">Admin</option>
+            <option value="chef">Đầu bếp</option>
+            <option value="staff">Nhân viên</option>
           </select>
-          <input name="note" placeholder={t("Note")} value={form.note} onChange={handleChange} className="border p-2 rounded col-span-2" />
-          <input name="image" placeholder={t("Image")} value={form.image} onChange={handleChange} className="border p-2 rounded" />
-          <input name="ingredients" placeholder={t("Ingredients")} value={form.ingredients} onChange={handleChange} className="border p-2 rounded col-span-3" />
+        </div>
 
-          <div className="flex gap-2">
-            {isEditing ? (
-              <>
-                <button onClick={handleUpdate} className="bg-blue-500 text-white px-4 py-2 rounded">{t("Update")}</button>
-                <button onClick={resetForm} className="bg-gray-300 px-4 py-2 rounded">{t("Cancel")}</button>
-              </>
-            ) : (
-              <button onClick={handleAdd} className="bg-green-500 text-white px-4 py-2 rounded">{t("Add")}</button>
-            )}
+        {userRole === "admin" && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input name="name" placeholder="Tên món" value={form.name} onChange={handleChange} className="border p-2 rounded text-gray-400" />
+              <input name="price" type="number" placeholder="Giá" value={form.price} onChange={handleChange} className="border p-2 rounded text-gray-400" />
+              <select name="category" value={form.category} onChange={handleChange} className="border p-2 rounded text-gray-400">
+                <option value="Món chính">Món chính</option>
+                <option value="Khai vị">Khai vị</option>
+                <option value="Đồ uống">Đồ uống</option>
+                <option value="Tráng miệng">Tráng miệng</option>
+              </select>
+              <input name="description" placeholder="Ghi chú" value={form.description} onChange={handleChange} className="border p-2 rounded col-span-2 text-gray-400" />
+              <div className="flex items-center gap-2">
+                <input type="file" accept="image/*" onChange={handleFileChange} className="border p-2 rounded text-gray-400" />
+                {previewUrl && <img src={previewUrl} alt="preview" className="w-12 h-12 object-cover rounded" />}
+              </div>
+              <input name="ingredient" placeholder="Nguyên liệu" value={form.ingredient} onChange={handleChange} className="border p-2 rounded col-span-3 text-gray-400" />
+
+              <div className="flex gap-2">
+                <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded">
+                  {isEditing ? "Sửa" : "Thêm"}
+                </button>
+                <button onClick={resetForm} className="bg-gray-400 text-white px-4 py-2 rounded">
+                  Huỷ
+                </button>
+              </div>
+            </div>
+        )}
+
+        <div className="flex items-center gap-4">
+          <input
+              type="text"
+              placeholder="Tìm kiếm món..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border p-2 rounded text-gray-400"
+          />
+          <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="border p-2 rounded text-gray-400">
+            <option value="Tất cả">Tất cả</option>
+            <option value="Món chính">Món chính</option>
+            <option value="Khai vị">Khai vị</option>
+            <option value="Đồ uống">Đồ uống</option>
+            <option value="Tráng miệng">Tráng miệng</option>
+          </select>
+          <p className="text-sm text-gray-500 italic">
+            Đang hiển thị {filteredMenus.length} món ăn phù hợp
+          </p>
+        </div>
+
+        <div>
+          <h2 className="font-semibold mb-2">📦 Thống kê số lượng món theo loại</h2>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(countByCategory).map(([cat, count]) => (
+                <div key={cat} className="border rounded px-4 py-2 bg-gray-100 text-gray-800 shadow-sm">
+                  {cat}: <strong>{count}</strong>
+                </div>
+            ))}
           </div>
         </div>
-      )}
 
-      <div className="flex items-center gap-4">
-        <input
-          type="text"
-          placeholder="Tìm kiếm món..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border p-2 rounded"
-        />
-        <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="border p-2 rounded text-gray-400">
-          <option value="all">{t("All")}</option>
-          <option value="main">{t("Main Dish")}</option>
-          <option value="starter">{t("Starter")}</option>
-          <option value="drink">{t("Drink")}</option>
-          <option value="dessert">{t("Dessert")}</option>
-        </select>
-      </div>
-
-      <div className="font-semibold">📊 {t("Total Revenue")}: {totalRevenue.toLocaleString()} đ</div>
-      <div>
-        <h2 className="font-semibold">📦 {t("Statistics by Category")}:</h2>
-        <ul className="list-disc list-inside">
-          {Object.entries(countByCategory).map(([cat, count]) => (
-            <li key={cat}>{t(categoryMap[cat])}: {count}</li>
-          ))}
-        </ul>
-      </div>
-
-      <table className="w-full border">
-        <thead className="bg-gray-400">
+        <table className="w-full border">
+          <thead className="bg-gray-400">
           <tr>
             <th className="p-2 border">#</th>
-            <th className="p-2 border">{t("Image")}</th>
-            <th className="p-2 border">{t("Name")}</th>
-            <th className="p-2 border">{t("Price")}</th>
-            <th className="p-2 border">{t("Category")}</th>
-            <th className="p-2 border">{t("Ingredients")}</th>
-            <th className="p-2 border">{t("Note")}</th>
-            <th className="p-2 border">{t("Revenue")}</th>
-            {userRole === "admin" && <th className="p-2 border">{t("Action")}</th>}
+            <th className="p-2 border">Ảnh</th>
+            <th className="p-2 border">Tên món</th>
+            <th className="p-2 border">Giá</th>
+            <th className="p-2 border">Loại</th>
+            <th className="p-2 border">Nguyên liệu</th>
+            <th className="p-2 border">Ghi chú</th>
+            {userRole === "admin" && <th className="p-2 border">Hành động</th>}
           </tr>
-        </thead>
-        <tbody>
-          {filteredMenus.map((item, index) => (
-            <tr key={item.id} className="hover:bg-gray-600">
-              <td className="p-2 border">{index + 1}</td>
-              <td className="p-2 border">{item.image ? <img src={item.image} className="w-16 h-16 object-cover" /> : <em>❌</em>}</td>
-              <td className="p-2 border">{item.name}</td>
-              <td className="p-2 border">{item.price.toLocaleString()} đ</td>
-              <td className="p-2 border">{t(categoryMap[item.category])}</td>
-              <td className="p-2 border">{item.ingredients}</td>
-              <td className="p-2 border">{item.note}</td>
-              <td className="p-2 border">{item.revenue.toLocaleString()} đ</td>
-              {userRole === "admin" && (
-                <td className="p-2 border">
-                  <button onClick={() => handleEdit(item)} className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded shadow">
-                    ✏️ {t("Update")}
-                  </button>
-                  <button onClick={() => handleDelete(item.id)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow">
-                    🗑 {t("Cancel")}
-                  </button>
-                </td>
-              )}
-            </tr>
+          </thead>
+          <tbody>
+          {paginatedMenus.map((item, index) => (
+              <tr key={item.menuId} className="hover:bg-gray-600">
+                <td className="p-2 border">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                <td className="p-2 border">{item.imageUrl ? <img src={`http://localhost:8080${item.imageUrl}`} className="w-16 h-16 object-cover" /> : <em>❌</em>}</td>
+                <td className="p-2 border">{item.name}</td>
+                <td className="p-2 border">{parseInt(item.price).toLocaleString()} đ</td>
+                <td className="p-2 border">{item.category}</td>
+                <td className="p-2 border">{item.ingredient}</td>
+                <td className="p-2 border">{item.description}</td>
+                {userRole === "admin" && (
+                    <td className="p-2 border space-x-2">
+                      <button onClick={() => handleEdit(item)} className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded shadow">
+                        ✏️ Sửa
+                      </button>
+                      <button onClick={() => handleDelete(item.menuId)} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow">
+                        🗑 Xoá
+                      </button>
+                    </td>
+                )}
+              </tr>
           ))}
-        </tbody>
-      </table>
-    </div>
+          </tbody>
+        </table>
+
+        <div className="flex justify-center mt-4 gap-2">
+          <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+              className="px-3 py-1 bg-green-900 rounded hover:bg-gray-300 disabled:opacity-50"
+          >
+            ⏮ Trước
+          </button>
+
+          {[...Array(totalPages)].map((_, idx) => (
+              <button
+                  key={idx}
+                  onClick={() => setCurrentPage(idx + 1)}
+                  className={`px-3 py-1 rounded ${currentPage === idx + 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+              >
+                {idx + 1}
+              </button>
+          ))}
+
+          <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+              className="px-3 py-1 bg-green-900 rounded hover:bg-gray-300 disabled:opacity-50"
+          >
+            Tiếp ⏭
+          </button>
+        </div>
+      </div>
   );
 };
 

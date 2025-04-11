@@ -1,5 +1,5 @@
 // import { BarChart2, DollarSign, Menu, Settings,SquareMenu, ConciergeBell, ShoppingBag,TableProperties, ShoppingCart, TrendingUp, Users } from "lucide-react";
-import { BarChart2, Menu,SquareMenu,Settings, ConciergeBell,TableProperties } from "lucide-react";
+import { BarChart2, Menu,SquareMenu,Settings, ConciergeBell,TableProperties, BookOpenCheckIcon } from "lucide-react";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -16,6 +16,7 @@ const SIDEBAR_ITEMS = [
 	{ name: "Quản Lý Đơn Hàng", icon: ConciergeBell, color: "#f97583", href: "/don-hang" },
 	{ name: "Quản lý Bàn", icon: TableProperties, color: "#1ed75a", href: "/table" },
 	{ name: "Quản lý Thực Đơn", icon: SquareMenu, color: "#c9fa27", href: "/menu" },
+	{ name: "Thống Kê", icon: BookOpenCheckIcon, color: "#c0cb2a", href: "/report" },
 	{ name: "Cài Đặt", icon: Settings, color: "#6EE7B7", href: "/settings" },
 ];
 
