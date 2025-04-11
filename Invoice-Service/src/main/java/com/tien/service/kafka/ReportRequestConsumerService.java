@@ -2,7 +2,7 @@ package com.tien.service.kafka;
 
 import com.tien.dto.event.InvoiceResponse;
 import com.tien.dto.event.ReportRequest;
-import com.tien.model.Invoice;
+import com.tien.model.Invoices;
 import com.tien.service.InvoiceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -19,7 +19,7 @@ public class ReportRequestConsumerService {
 
     @KafkaListener(topics = "report-request", groupId = "invoice-group")
     public void listenReportRequest(ReportRequest request) {
-        List<Invoice> invoices = invoiceService.getInvoicesByDateRange(request.getStartDate(), request.getEndDate());
+        List<Invoices> invoices = invoiceService.getInvoicesByDateRange(request.getStartDate(), request.getEndDate());
 
         InvoiceResponse response = new InvoiceResponse();
         response.setRequestId(request.getRequestId()); // Để khớp request

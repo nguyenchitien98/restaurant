@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Invoice {
+public class Invoices {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

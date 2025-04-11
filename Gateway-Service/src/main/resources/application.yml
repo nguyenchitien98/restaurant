@@ -11,5 +11,7 @@ spring:
   application:
     name: Gateway-Service
 
-
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
 

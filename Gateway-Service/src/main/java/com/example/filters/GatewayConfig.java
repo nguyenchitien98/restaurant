@@ -1,5 +1,6 @@
 package com.example.filters;
 
+import org.springframework.cloud.gateway.filter.factory.DedupeResponseHeaderGatewayFilterFactory;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -32,7 +33,7 @@ public class GatewayConfig {
                         .uri("http://localhost:8084"))
                 .route("invoice", r -> r.path("/api/invoice/**")
                         .uri("http://localhost:8085"))
-                .route("report", r -> r.path("/api/reports/**")
+                .route("report", r -> r.path("/api/reports/**","/ws-report/**").filters(f -> f.dedupeResponseHeader("Access-Control-Allow-Origin", DedupeResponseHeaderGatewayFilterFactory.Strategy.RETAIN_FIRST.name()))
                         .uri("http://localhost:8086"))
                 .build();
     }

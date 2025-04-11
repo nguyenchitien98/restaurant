@@ -4,6 +4,8 @@ import com.tien.dto.event.InvoiceResponse;
 import com.tien.model.Invoice;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,6 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 @RequiredArgsConstructor
 public class InvoiceKafkaConsumer {
+
+    private final SimpMessagingTemplate messagingTemplate;
 
     private final Map<String, CompletableFuture<List<Invoice>>> pendingRequests = new ConcurrentHashMap<>();
 
@@ -29,6 +33,12 @@ public class InvoiceKafkaConsumer {
         if (future != null) {
             future.complete(response.getInvoices());
         }
+    }
+
+    @KafkaListener(topics = "revenue-topic", groupId = "report-group")
+    public void handleRevenue(Double totalRevenue) {
+        System.out.println("amount 2= " + totalRevenue);
+        messagingTemplate.convertAndSend("/topic/revenue", totalRevenue);
     }
 
 }
