@@ -42,6 +42,23 @@ public class UserController {
         return userService.searchByUsername(userName);
     }
 
+    @PutMapping
+    public ResponseEntity<User> updateUser(@RequestBody User user) {
+        return ResponseEntity.ok(userService.updateUser(user));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/cache/all")
+    public ResponseEntity<Void> clearCache() {
+        userService.clearAllUserCache();
+        return ResponseEntity.noContent().build();
+    }
+
 //    @GetMapping("/{id}")
 //    public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
 //        // Logic login (sẽ làm tiếp trong phần xác thực)

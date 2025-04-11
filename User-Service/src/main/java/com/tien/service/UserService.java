@@ -11,6 +11,8 @@ import com.tien.repository.elasticseach.UserSearchRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -50,6 +52,24 @@ public class UserService {
     @Cacheable(value = "users", key = "#id")
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
+    }
+
+    // 2. Cập nhật user, đồng thời cập nhật lại cache
+    @CachePut(value = "users", key = "#user.userId")
+    public User updateUser(User user) {
+        return userRepository.save(user);
+    }
+
+    // 3. Xoá user và xoá luôn cache tương ứng
+    @CacheEvict(value = "users",key = "#id")
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
+
+    // 4. (Tuỳ chọn) Xoá toàn bộ cache
+    @CacheEvict(value = "users", allEntries = true)
+    public void clearAllUserCache() {
+        // Dọn sạch cache user: allEntries = true
     }
 
     public List<UserDocument> searchByUsername(String userName) {
