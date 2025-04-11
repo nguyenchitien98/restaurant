@@ -21,3 +21,19 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     depends_on:
       - zookeeper
+
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node  # Chạy 1 node để dev/test
+      - xpack.security.enabled=false # Tắt security cho đơn giản
+    ports:
+      - "9200:9200"  # Cổng để ứng dụng Spring truy cập
+      - "9300:9300"  # Dùng cho cluster nội bộ (ít dùng trong dev)
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+volumes:
+  esdata:
