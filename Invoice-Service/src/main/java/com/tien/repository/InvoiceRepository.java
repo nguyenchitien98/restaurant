@@ -14,10 +14,39 @@ import java.util.Optional;
 public interface InvoiceRepository extends JpaRepository<Invoices, Long> {
     Optional<Invoices> findByOrderId(Long orderId);
 
-    @Query(value = "SELECT SUM(total_amount) FROM restaurant_db.invoices", nativeQuery = true)
-    Double getTotalRevenue();
+    @Query(value = """
+        SELECT COALESCE(SUM(total_amount), 0)
+        FROM invoices
+        WHERE YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)
+    """, nativeQuery = true)
+    Double getTotalRevenueWeekly();
 
     List<Invoices> findByCreatedAtBetween(LocalDate createdAtAfter, LocalDate createdAtBefore);
+
+    @Query(value = """
+    SELECT 
+        day_of_week,
+        CASE day_of_week
+            WHEN 1 THEN 'Sunday'
+            WHEN 2 THEN 'Monday'
+            WHEN 3 THEN 'Tuesday'
+            WHEN 4 THEN 'Wednesday'
+            WHEN 5 THEN 'Thursday'
+            WHEN 6 THEN 'Friday'
+            WHEN 7 THEN 'Saturday'
+        END AS weekday,
+        SUM(total_amount) AS total_revenue
+    FROM (
+        SELECT 
+            DAYOFWEEK(created_at) AS day_of_week,
+            total_amount
+        FROM invoices
+        WHERE YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)
+    ) AS sub
+    GROUP BY day_of_week
+    ORDER BY day_of_week
+""", nativeQuery = true)
+    List<Object[]> getWeeklyRevenue();
 
     // Tổng doanh thu trong khoảng thời gian bằng JPQL ( JPQL giống với SQL nhưng sử dụng các tên đối tượng Java thay vì tên bảng cơ sở dữ liệu. )
     @Query("SELECT SUM(i.totalAmount) FROM Invoices i WHERE i.createdAt BETWEEN :start AND :end")
