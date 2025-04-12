@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -22,6 +23,10 @@ public class RestaurantTable {
     @Column(columnDefinition = "ENUM('OCCUPIED', 'RESERVED', 'EMPTY') DEFAULT 'EMPTY'")
     private TableStatus status; // Trạng thái: EMPTY:TRỐNG, OCCUPIED: ĐÃ CÓ KHÁCH, RESERVED: ĐẶT TRƯỚC, v.v.
     private Integer capacity;
+
+    private String note;
+
+    private LocalDateTime reserved_at;
 
     @OneToMany(mappedBy = "table", fetch = FetchType.LAZY)
     @JsonBackReference

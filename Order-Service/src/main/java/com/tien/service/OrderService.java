@@ -4,6 +4,7 @@ import com.tien.client.MenuClient;
 import com.tien.dto.event.OrderDetailEvent;
 import com.tien.dto.event.OrderEvent;
 import com.tien.dto.event.OrderEventStatus;
+import com.tien.dto.request.TableStatusRequest;
 import com.tien.dto.response.OrderItemDTO;
 import com.tien.dto.response.OrderResponseDTO;
 import com.tien.service.kafka.OrderKafkaProducer;
@@ -170,7 +171,8 @@ public class OrderService {
 
     // Cập nhật trạng thái bàn sau khi gọi món
     public RestaurantTable updateTableStatusAfterOrder(Long tableId) {
-        tableService.updateTableStatus(tableId, TableStatus.OCCUPIED);
+        TableStatusRequest tableStatusRequest = new TableStatusRequest(tableId,TableStatus.OCCUPIED);
+        tableService.updateTableStatus(tableStatusRequest);
         return tableService.getAllTables().stream()
                 .filter(t -> t.getTable_id().equals(tableId))
                 .findFirst()
