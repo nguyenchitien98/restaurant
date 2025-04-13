@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -25,8 +25,12 @@ public class OrderDetail {
     private Integer quantity;
     private Double price;
 
+    private String note;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
     @Enumerated(EnumType.STRING)
-    private OrderDetailStatus status; // PENDING, IN_PROGRESS, COMPLETED
+    private OrderDetailStatus status; // 'PENDING','COOKING','COMPLETED','CANCELLED'
 
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)

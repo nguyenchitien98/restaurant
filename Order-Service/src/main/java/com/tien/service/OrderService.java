@@ -96,6 +96,8 @@ public class OrderService {
                     newItem.setMenuId(itemsOrderDetail.getMenuId());
                     newItem.setQuantity(itemsOrderDetail.getQuantity());
                     newItem.setPrice(itemsOrderDetail.getPrice());
+                    newItem.setNote(note);
+                    newItem.setStatus(OrderDetailStatus.PENDING);
                     newItem.setOrder(existingOrder);
                     existingOrder.getOrderDetails().add(newItem);
                 }
