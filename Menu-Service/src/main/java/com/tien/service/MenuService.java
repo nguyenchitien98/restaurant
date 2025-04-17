@@ -14,7 +14,9 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -106,5 +108,11 @@ public String uploadImage(MultipartFile file){
             deleteFile(menu.getImageUrl());
         }
         menuRepository.delete(menu);
+    }
+
+    public Map<Long, String> getMenuNamesByIds(List<Long> ids) {
+        List<Menu> menus = menuRepository.findByMenuIdIn(ids);
+        return menus.stream()
+                .collect(Collectors.toMap(Menu::getMenuId, Menu::getName));
     }
 }

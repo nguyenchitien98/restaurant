@@ -1,5 +1,6 @@
 package com.tien.config;
 
+//import com.tien.dto.event.MenuIdRequestEvent;
 import com.tien.dto.event.OrderEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -46,4 +47,18 @@ public class KafkaProducerConfig {
     public KafkaTemplate<String, Object> genericKafkaTemplate() {
         return new KafkaTemplate<>(genericProducerFactory());
     }
+
+//    @Bean
+//    public ProducerFactory<String, MenuIdRequestEvent> producerFactoryListName() {
+//        Map<String, Object> config = new HashMap<>();
+//        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+//        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+//        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+//        return new DefaultKafkaProducerFactory<>(config);
+//    }
+//
+//    @Bean
+//    public KafkaTemplate<String, MenuIdRequestEvent> kafkaTemplateListName() {
+//        return new KafkaTemplate<>(producerFactoryListName());
+//    }
 }

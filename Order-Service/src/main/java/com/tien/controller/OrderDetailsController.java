@@ -1,6 +1,8 @@
 package com.tien.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.tien.dto.request.UpdateStatusRequest;
+import com.tien.dto.response.OrderDetailResponse;
 import com.tien.model.OrderDetail;
 import com.tien.model.OrderDetailStatus;
 import com.tien.service.OrderDetailsService;
@@ -35,5 +37,11 @@ public class OrderDetailsController {
             @RequestBody UpdateStatusRequest request
     ) {
         return ResponseEntity.ok(orderDetailsService.updateOrderDetailStatus(id, request.getStatus()));
+    }
+
+    // GET danh sách theo status trong ngày
+    @GetMapping("/today")
+    public ResponseEntity<List<OrderDetailResponse>> getAllTodayOrderDetailsByStatus(@RequestParam("status") OrderDetailStatus status){
+        return ResponseEntity.ok(orderDetailsService.getAllTodayOrderDetailsByStatus(status));
     }
 }

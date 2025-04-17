@@ -69,6 +69,14 @@ public class MenuController {
             return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
 
     }
+
+    @PostMapping("/names-by-ids")
+    public ResponseEntity<Map<Long, String>> getMenuNames(@RequestBody List<Long> menuIds) {
+        Map<Long, String> result = menuService.getMenuNamesByIds(menuIds);
+        return ResponseEntity.ok(result);
+    }
+
+
 //    @PostMapping("/upload")
 //    public ResponseEntity<?> uploadImage(@RequestParam("image") MultipartFile file) {
 //        try {

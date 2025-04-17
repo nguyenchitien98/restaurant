@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface MenuRepository extends JpaRepository<Menu, Long> {
     List<Menu> findByCategory(String category);
+    List<Menu> findByMenuIdIn(List<Long> ids);
 }

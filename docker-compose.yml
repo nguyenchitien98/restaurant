@@ -9,6 +9,17 @@ services:
     ports:
       - "2181:2181"
 
+  mysql:
+    image: mysql:8.0.41
+    container_name: mysql-vietnam
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+      - TZ=Asia/Ho_Chi_Minh
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf
+
   kafka:
     image: confluentinc/cp-kafka:latest
     restart: always
@@ -47,4 +58,5 @@ services:
 volumes:
   esdata:
   redis-data:
+
 
