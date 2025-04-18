@@ -63,3 +63,12 @@ cd restaurant
 
 Start services using Docker Compose
 docker-compose up --build
+
+```
+
+## Author
+Nguyễn Chí Tiến - Fullstack Developer
+
+Email: tiennguyenchi98@gmail.com
+
+GitHub: https://github.com/nguyenchitien98
