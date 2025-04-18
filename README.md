@@ -21,7 +21,7 @@ A full-featured Restaurant Management Web Application built with Microservices A
 ## 🛠️ Tech Stack
 
 ### Backend
-- Java 23 + Spring Boot
+- Java 21 + Spring Boot
 - Spring Web, Spring Data JPA, Spring Security
 - Spring Kafka (asynchronous messaging)
 - Spring Batch (CSV/Excel import)
