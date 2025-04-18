@@ -7,6 +7,7 @@ import com.tien.model.OrderDetail;
 import com.tien.model.OrderDetailStatus;
 import com.tien.service.OrderDetailsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,5 +44,32 @@ public class OrderDetailsController {
     @GetMapping("/today")
     public ResponseEntity<List<OrderDetailResponse>> getAllTodayOrderDetailsByStatus(@RequestParam("status") OrderDetailStatus status){
         return ResponseEntity.ok(orderDetailsService.getAllTodayOrderDetailsByStatus(status));
+    }
+
+
+    @GetMapping("/order/{orderId}")
+    public List<OrderDetail> getByOrderId(@PathVariable Long orderId) {
+        return orderDetailsService.getOrderDetailsByOrderId(orderId);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderDetail> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(orderDetailsService.getOrderDetailById(id));
+    }
+
+    @PostMapping("/order/{orderId}")
+    public ResponseEntity<OrderDetail> create(@PathVariable Long orderId, @RequestBody OrderDetail orderDetail) {
+        return new ResponseEntity<>(orderDetailsService.createOrderDetail(orderId, orderDetail), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<OrderDetail> update(@PathVariable Long id, @RequestBody OrderDetail orderDetail) {
+        return ResponseEntity.ok(orderDetailsService.updateOrderDetail(id, orderDetail));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        orderDetailsService.deleteOrderDetail(id);
+        return ResponseEntity.noContent().build();
     }
 }

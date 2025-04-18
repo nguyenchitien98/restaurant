@@ -22,14 +22,14 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/{tableId}/create")
-    public ResponseEntity<Order> createOrder(@PathVariable Long tableId, @RequestBody Order order) {
+    public ResponseEntity<Order> createOrder(@PathVariable Long tableId, @RequestBody OrderRequest order) {
         Order newOrder = orderService.createOrder(tableId,order);
         return new ResponseEntity<>(newOrder, HttpStatus.CREATED);
     }
 
-    @PostMapping
-    public ResponseEntity<Order> createOrUpdateOrder(@RequestBody OrderRequest request) {
-        Order newOrder = orderService.createOrUpdateOrder(
+    @PutMapping("/update")
+    public ResponseEntity<Order> updateOrder(@RequestBody OrderRequest request) {
+        Order newOrder = orderService.updateOrder(
                 request.getTableId(),
                 request.getUserId(),
                 request.getOrderDetails(),
@@ -60,8 +60,8 @@ public class OrderController {
     }
 
     @DeleteMapping("/{id}")
-    public String deleteOrder(@PathVariable Long id) {
-        orderService.deleteOrder(id);
+    public String deleteOrder(@PathVariable Long id, @RequestParam("tableId") Long tableId){
+        orderService.deleteOrder(id, tableId);
         return "Order deleted successfully!";
     }
 }

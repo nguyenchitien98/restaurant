@@ -4,7 +4,9 @@ import com.tien.client.MenuClient;
 import com.tien.dto.event.OrderDetailEvent;
 import com.tien.dto.event.OrderEvent;
 import com.tien.dto.event.OrderEventStatus;
+import com.tien.dto.request.OrderRequest;
 import com.tien.dto.request.TableStatusRequest;
+import com.tien.dto.response.OrderDetailResponse;
 import com.tien.dto.response.OrderItemDTO;
 import com.tien.dto.response.OrderResponseDTO;
 import com.tien.service.kafka.OrderKafkaProducer;
@@ -15,9 +17,12 @@ import com.tien.service.kafka.OrderStatusProducer;
 import com.tien.websocket.OrderWebSocketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,6 +32,7 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final SimpMessagingTemplate messagingTemplate;
     private final OrderDetailRepository orderDetailRepository;
     private final TableService tableService;
     private final MenuClient menuClient;
@@ -37,12 +43,13 @@ public class OrderService {
 
 
     // Tạo mới order cho bàn
-    public Order createOrder(Long tableId, Order order) {
+    public Order createOrder(Long tableId, OrderRequest orderRequest) {
+        Order order = new Order();
         RestaurantTable table = tableService.getAllTables().stream()
                 .filter(t -> t.getTable_id().equals(tableId))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Table not found"));
-        for (OrderDetail orderDetail : order.getOrderDetails()) {
+        for (OrderDetail orderDetail : orderRequest.getOrderDetails()) {
             Menu item = menuClient.getMenuById(orderDetail.getMenuId());
             if (item == null){
                 throw new RuntimeException("Menu item not found: " + orderDetail.getMenuId());
@@ -53,9 +60,9 @@ public class OrderService {
 
         order.setTable(table);
         order.setStatus(OrderStatus.PENDING);
-        order.setUserId(order.getUserId());
-        order.setOrderDetails(order.getOrderDetails());
-        order.setTotalPrice(order.getOrderDetails().stream().mapToDouble(od -> od.getPrice() * od.getQuantity()).sum());
+        order.setUserId(orderRequest.getUserId());
+        order.setOrderDetails(orderRequest.getOrderDetails());
+        order.setTotalPrice(orderRequest.getOrderDetails().stream().mapToDouble(od -> od.getPrice() * od.getQuantity()).sum());
 
         Order savedOrder = orderRepository.save(order);
 
@@ -67,6 +74,28 @@ public class OrderService {
         // Gửi sự kiện tới Kitchen Service
         OrderEvent event = new OrderEvent(savedOrder.getOrderId(), detailEvents);
         kafkaTemplate.send("kitchen-orders", event);
+
+        // Gửi WebSocket tới UI kitchen
+        Integer tableNumber = table.getTable_number();
+        List<OrderDetailResponse> kitchenItems = savedOrder.getOrderDetails().stream()
+                .map(detail -> {
+                    Menu menu = menuClient.getMenuById(detail.getMenuId());
+                    return new OrderDetailResponse(
+                            detail.getOrderDetailId(),
+                            savedOrder.getOrderId(),
+                            detail.getMenuId(),
+                            menu != null ? menu.getName() : "Unknown",
+                            tableNumber,
+                            detail.getQuantity(),
+                            detail.getStatus().name(),
+                            detail.getCreatedAt()
+                    );
+                })
+                .collect(Collectors.toList());
+
+        for (OrderDetailResponse item : kitchenItems) {
+            messagingTemplate.convertAndSend("/topic/kitchen", item);
+        }
 
         return savedOrder;
     }
@@ -81,6 +110,7 @@ public class OrderService {
 
         if (existingOrderOpt.isPresent()) {
             Order existingOrder = existingOrderOpt.get();
+            List<OrderDetail> newlyAddedItems = new ArrayList<>();
 
             // 2. Gộp món mới vào đơn cũ
             for (OrderDetail itemsOrderDetail : orderDetailList) {
@@ -98,8 +128,10 @@ public class OrderService {
                     newItem.setPrice(itemsOrderDetail.getPrice());
                     newItem.setNote(note);
                     newItem.setStatus(OrderDetailStatus.PENDING);
+                    newItem.setCreatedAt(LocalDateTime.now());
                     newItem.setOrder(existingOrder);
                     existingOrder.getOrderDetails().add(newItem);
+                    newlyAddedItems.add(newItem); // track món mới
                 }
             }
             // Đặt lại tổng tiền sau khi đã xử lý tất cả món
@@ -112,14 +144,32 @@ public class OrderService {
                 existingOrder.setNote(existingOrder.getNote() + " | " + note);
             }
 
-           return orderRepository.save(existingOrder);
+            Order updatedOrder = orderRepository.save(existingOrder);
+
+            // Gửi WebSocket cho từng món mới
+            for (OrderDetail newItem : newlyAddedItems) {
+                Menu menu = menuClient.getMenuById(newItem.getMenuId());
+
+                OrderDetailResponse response = new OrderDetailResponse();
+                response.setOrderDetailId(newItem.getOrderDetailId());
+                response.setOrderId(updatedOrder.getOrderId());
+                response.setMenuId(newItem.getMenuId());
+                response.setMenuName(menu.getName());
+                response.setQuantity(newItem.getQuantity());
+                response.setTableNumber(table.getTable_number());
+                response.setStatus(newItem.getStatus().toString());
+                response.setCreatedAt(newItem.getCreatedAt());
+
+                messagingTemplate.convertAndSend("/topic/kitchen", response);
+            }
+
+            return updatedOrder;
         } else {
             // 3. Tạo đơn mới
             Order newOrder = new Order();
             newOrder.setTable(table);
             newOrder.setUserId(userId);
             newOrder.setStatus(OrderStatus.PENDING);
-            newOrder.setTotalPrice(orderDetailList.stream().mapToDouble(od -> od.getPrice() * od.getQuantity()).sum());
             newOrder.setNote(note);
             newOrder.setCreatedAt(LocalDate.now());
 
@@ -129,14 +179,102 @@ public class OrderService {
                 item.setQuantity(dto.getQuantity());
                 item.setPrice(dto.getPrice());
                 item.setStatus(OrderDetailStatus.PENDING);
+                item.setCreatedAt(LocalDateTime.now());
                 item.setOrder(newOrder);
                 return item;
             }).collect(Collectors.toList());
-
             newOrder.setOrderDetails(itemEntities);
-           return orderRepository.save(newOrder);
+            newOrder.setTotalPrice(orderDetailList.stream().mapToDouble(od -> od.getPrice() * od.getQuantity()).sum());
+
+            Order savedOrder = orderRepository.save(newOrder);
+
+            // Gửi WebSocket cho tất cả món
+            for (OrderDetail od : savedOrder.getOrderDetails()) {
+                Menu menu = menuClient.getMenuById(od.getMenuId());
+
+                OrderDetailResponse response = new OrderDetailResponse();
+                response.setOrderDetailId(od.getOrderDetailId());
+                response.setOrderId(savedOrder.getOrderId());
+                response.setMenuId(od.getMenuId());
+                response.setMenuName(menu.getName());
+                response.setQuantity(od.getQuantity());
+                response.setTableNumber(table.getTable_number());
+                response.setStatus(od.getStatus().toString());
+                response.setCreatedAt(od.getCreatedAt());
+
+                messagingTemplate.convertAndSend("/topic/kitchen", response);
+            }
+
+            return savedOrder;
         }
     }
+
+    public Order updateOrder(Long tableId,Long userId, List<OrderDetail> orderDetailList, String note) {
+        // 1. Kiểm tra xem bàn đã có order chưa thanh toán chưa
+        RestaurantTable table = tableService.getAllTables().stream()
+                .filter(t -> t.getTable_id().equals(tableId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Table not found"));
+        Order existingOrder = orderRepository.findByTableAndStatus(table,OrderStatus.PENDING).orElseThrow(() -> new RuntimeException("Order not found"));
+
+            List<OrderDetail> newlyAddedItems = new ArrayList<>();
+
+            // 2. Gộp món mới vào đơn cũ
+            for (OrderDetail itemsOrderDetail : orderDetailList) {
+                Optional<OrderDetail> existingOrderDetail = existingOrder.getOrderDetails().stream()
+                        .filter(i -> i.getMenuId().equals(itemsOrderDetail.getMenuId()))
+                        .findFirst();
+
+                if (existingOrderDetail.isPresent()) {
+                    OrderDetail item = existingOrderDetail.get();
+                    item.setQuantity(item.getQuantity() + itemsOrderDetail.getQuantity());
+                } else {
+                    OrderDetail newItem = new OrderDetail();
+                    newItem.setMenuId(itemsOrderDetail.getMenuId());
+                    newItem.setQuantity(itemsOrderDetail.getQuantity());
+                    newItem.setPrice(itemsOrderDetail.getPrice());
+                    newItem.setNote(note);
+                    newItem.setStatus(OrderDetailStatus.PENDING);
+                    newItem.setCreatedAt(LocalDateTime.now());
+                    newItem.setOrder(existingOrder);
+                    existingOrder.getOrderDetails().add(newItem);
+                    newlyAddedItems.add(newItem); // track món mới
+                }
+            }
+            // Đặt lại tổng tiền sau khi đã xử lý tất cả món
+            double total = existingOrder.getOrderDetails().stream()
+                    .mapToDouble(od -> od.getPrice() * od.getQuantity())
+                    .sum();
+            existingOrder.setTotalPrice(total);
+            existingOrder.setUserId(userId);
+
+            if (note != null && !note.isEmpty()) {
+//                existingOrder.setNote(existingOrder.getNote() + " | " + note);
+                existingOrder.setNote(note);
+            }
+
+            Order updatedOrder = orderRepository.save(existingOrder);
+
+            // Gửi WebSocket cho từng món mới
+            for (OrderDetail newItem : newlyAddedItems) {
+                Menu menu = menuClient.getMenuById(newItem.getMenuId());
+
+                OrderDetailResponse response = new OrderDetailResponse();
+                response.setOrderDetailId(newItem.getOrderDetailId());
+                response.setOrderId(updatedOrder.getOrderId());
+                response.setMenuId(newItem.getMenuId());
+                response.setMenuName(menu.getName());
+                response.setQuantity(newItem.getQuantity());
+                response.setTableNumber(table.getTable_number());
+                response.setStatus(newItem.getStatus().toString());
+                response.setCreatedAt(newItem.getCreatedAt());
+
+                messagingTemplate.convertAndSend("/topic/kitchen", response);
+            }
+
+            return updatedOrder;
+    }
+
 
     public void completeOrderDetail(Long orderDetailId) {
         OrderDetail orderDetail = orderDetailRepository.findById(orderDetailId)
@@ -186,6 +324,7 @@ public class OrderService {
 
         return orders.stream().map(order -> {
             OrderResponseDTO dto = new OrderResponseDTO();
+            dto.setOrderId(order.getOrderId());
             dto.setTableId(order.getTable().getTable_id());
             dto.setTableNumber(order.getTable().getTable_number());
             dto.setNote(order.getNote());
@@ -224,7 +363,8 @@ public class OrderService {
             return updatedOrder;
     }
 
-    public void deleteOrder(Long orderId) {
+    public void deleteOrder(Long orderId, Long tableId) {
+        tableService.updateStatusTable(tableId);
         orderRepository.deleteById(orderId);
     }
 

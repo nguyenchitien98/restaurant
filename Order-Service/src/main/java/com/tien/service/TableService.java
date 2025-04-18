@@ -53,6 +53,13 @@ public class TableService {
         }).orElseThrow(() -> new RuntimeException("Không tìm thấy bàn với id: " + id));
     }
 
+    public RestaurantTable updateStatusTable(Long id) {
+        return  tableRepository.findById(id).map(table -> {
+            table.setStatus(TableStatus.EMPTY);
+            return tableRepository.save(table);
+        }).orElseThrow(() -> new RuntimeException("Không tìm thấy bàn với id: " + id));
+    }
+
 
     public void deleteTable(Long id) {
         if (!tableRepository.existsById(id)) {

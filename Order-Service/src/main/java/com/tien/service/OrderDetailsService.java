@@ -10,10 +10,12 @@ import com.tien.model.RestaurantTable;
 import com.tien.repository.OrderDetailRepository;
 //import com.tien.service.kafka.MenuCache;
 //import com.tien.service.kafka.MenuNameKafkaConsumer;
+import com.tien.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ public class OrderDetailsService {
 //    private final MenuCache menuCache;
 //    private final KafkaTemplate<String, MenuIdRequestEvent> kafkaTemplate;
     private final MenuClient menuClient;
+    private final OrderRepository orderRepository; // để lấy Order theo orderId
 
     public OrderDetail createOrderDetail(OrderDetail orderDetail) {
         return orderDetailRepository.save(orderDetail);
@@ -105,4 +108,43 @@ public class OrderDetailsService {
                     );
                 }).collect(Collectors.toList());
     }
+
+    public List<OrderDetail> getAllOrderDetails() {
+        return orderDetailRepository.findAll();
+    }
+
+    public List<OrderDetail> getOrderDetailsByOrderId(Long orderId) {
+        return orderDetailRepository.findByOrder_OrderId(orderId);
+    }
+
+    public OrderDetail getOrderDetailById(Long id) {
+        return orderDetailRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("OrderDetail not found"));
+    }
+
+    public OrderDetail createOrderDetail(Long orderId, OrderDetail orderDetail) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        orderDetail.setOrder(order);
+        orderDetail.setCreatedAt(LocalDateTime.now());
+        orderDetail.setUpdatedAt(LocalDateTime.now());
+        return orderDetailRepository.save(orderDetail);
+    }
+
+    public OrderDetail updateOrderDetail(Long id, OrderDetail updatedDetail) {
+        OrderDetail existing = getOrderDetailById(id);
+        existing.setMenuId(updatedDetail.getMenuId());
+        existing.setQuantity(updatedDetail.getQuantity());
+        existing.setPrice(updatedDetail.getPrice());
+        existing.setNote(updatedDetail.getNote());
+        existing.setStatus(updatedDetail.getStatus());
+        existing.setUpdatedAt(LocalDateTime.now());
+        return orderDetailRepository.save(existing);
+    }
+
+    public void deleteOrderDetail(Long id) {
+        orderDetailRepository.deleteById(id);
+    }
+
 }
