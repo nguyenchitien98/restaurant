@@ -16,12 +16,12 @@ A full-featured Restaurant Management Web Application built with Microservices A
 - Fully containerized with Docker & orchestrated by Kubernetes
 - CI/CD ready
 
-## 🧱 System Architecture
+##  System Architecture
 
 ## 🛠️ Tech Stack
 
 ### Backend
-- Java 17 + Spring Boot
+- Java 21 + Spring Boot
 - Spring Web, Spring Data JPA, Spring Security
 - Spring Kafka (asynchronous messaging)
 - Spring Batch (CSV/Excel import)
@@ -44,12 +44,13 @@ A full-featured Restaurant Management Web Application built with Microservices A
 
 ## 📦 Microservices
 
-| Service         | Description                                     |
-|-----------------|-------------------------------------------------|
-| Order Service   | Handles order creation, updates, and dispatch   |
-| Menu Service    | Manages the restaurant's menu items             |
-| Kitchen Service | Receives dishes from Order Service, updates status in real-time |
-| Invoice Service | Generates invoices and calculates revenue       |
+| Service         | Description                                                         |
+|-----------------|---------------------------------------------------------------------|
+| User Service    | Manage employees, grant employee rights, add, edit, delete          |
+| Order Service   | Handles order creation, updates, and dispatch                       |
+| Menu Service    | Manages the restaurant's menu items                                 |
+| Kitchen Service | Receives dishes from Order Service, updates status in real-time     |
+| Invoice Service | Generates invoices and calculates revenue                           |
 | Report Service  | Receives revenue data via Kafka and updates dashboard via WebSocket |
 
 ## 🔧 How to Run (Local)
@@ -57,8 +58,17 @@ A full-featured Restaurant Management Web Application built with Microservices A
 1. **Clone the project**
 
 ```bash
-git clone https://github.com/your-username/restaurant-management-system.git
-cd restaurant-management-system
+git clone https://github.com/nguyenchitien98/restaurant
+cd restaurant
 
 Start services using Docker Compose
 docker-compose up --build
+
+```
+
+## Author
+Nguyễn Chí Tiến - Fullstack Developer
+
+Email: tiennguyenchi98@gmail.com
+
+GitHub: https://github.com/nguyenchitien98
