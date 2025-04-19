@@ -1,6 +1,7 @@
 package com.tien.controller;
 
 import com.tien.dto.request.InvoiceRequest;
+import com.tien.dto.response.MonthlyRevenueDTO;
 import com.tien.dto.response.WeeklyRevenueDTO;
 import com.tien.model.Invoices;
 import com.tien.service.InvoiceService;
@@ -37,5 +38,10 @@ public class InvoiceController {
     @GetMapping("/weekly-total")
     public Double getWeeklyTotalRevenue() {
         return invoiceService.getTotalRevenueWeekly();
+    }
+
+    @GetMapping("/monthly-revenue")
+    public List<MonthlyRevenueDTO> getMonthlyTotalRevenue( @RequestParam int year) {
+        return invoiceService.getMonthlyRevenue(year);
     }
 }

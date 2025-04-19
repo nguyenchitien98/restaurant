@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.tien.grpc";
+option java_outer_classname = "InvoiceProto";
+
+service InvoiceService {
+  rpc GetMonthlyRevenue (MonthlyRevenueRequest) returns (MonthlyRevenueResponse);
+}
+
+message MonthlyRevenueRequest {
+  int32 year = 1;
+}
+
+message MonthlyRevenueResponse {
+  repeated MonthlyRevenue revenues = 1;
+}
+
+message MonthlyRevenue {
+  int32 month = 1;
+  double totalAmount = 2;
+}

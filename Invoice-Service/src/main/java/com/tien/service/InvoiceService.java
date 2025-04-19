@@ -1,5 +1,6 @@
 package com.tien.service;
 
+import com.tien.dto.response.MonthlyRevenueDTO;
 import com.tien.dto.response.WeeklyRevenueDTO;
 import com.tien.model.Invoices;
 import com.tien.repository.InvoiceRepository;
@@ -63,6 +64,17 @@ public class InvoiceService {
                         (Integer) row[0],
                         (String) row[1],
                         (Double) row[2]
+                ))
+                .collect(Collectors.toList());
+    }
+
+    public List<MonthlyRevenueDTO> getMonthlyRevenue(int year) {
+        List<Object[]> rawResults = invoiceRepository.getMonthlyRevenue(year);
+
+        return rawResults.stream()
+                .map(row -> new MonthlyRevenueDTO(
+                        (Integer) row[0],
+                        (Double) row[1]
                 ))
                 .collect(Collectors.toList());
     }

@@ -48,6 +48,12 @@ public interface InvoiceRepository extends JpaRepository<Invoices, Long> {
 """, nativeQuery = true)
     List<Object[]> getWeeklyRevenue();
 
+    @Query("SELECT MONTH(i.createdAt) as month, SUM(i.totalAmount) as totalAmount " +
+            "FROM Invoices i " +
+            "WHERE YEAR(i.createdAt) = :year " +
+            "GROUP BY MONTH(i.createdAt)")
+    List<Object[]> getMonthlyRevenue(@Param("year") int year);
+
     // Tổng doanh thu trong khoảng thời gian bằng JPQL ( JPQL giống với SQL nhưng sử dụng các tên đối tượng Java thay vì tên bảng cơ sở dữ liệu. )
     @Query("SELECT SUM(i.totalAmount) FROM Invoices i WHERE i.createdAt BETWEEN :start AND :end")
     Double sumRevenueBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
@@ -57,6 +63,8 @@ public interface InvoiceRepository extends JpaRepository<Invoices, Long> {
             "FROM restaurant_db.invoices WHERE created_at BETWEEN :start AND :end " +
             "GROUP BY DATE(created_at) ORDER BY DATE(created_at)",nativeQuery = true)
     List<Invoices> getRevenueByDayRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+
 
 //     Doanh thu theo ngày bằng navtive queries
     @Query(value = "SELECT date(created_at) AS date, SUM(total_amount) AS totalRevenue\n" +
