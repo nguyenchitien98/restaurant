@@ -1,8 +1,8 @@
-# 🍽️ Restaurant Management System
+# Restaurant Management System
 
 A full-featured Restaurant Management Web Application built with Microservices Architecture. The system helps restaurant staff manage orders, tables, kitchen workflow, menu, billing, and real-time revenue reports.
 
-## 🚀 Features
+## Features
 
 - Manage tables, menu items, and user roles (admin, waiter, chef)
 - Create, update, and process orders in real-time
@@ -18,7 +18,7 @@ A full-featured Restaurant Management Web Application built with Microservices A
 
 ##  System Architecture
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Backend
 - Java 21 + Spring Boot
@@ -42,7 +42,7 @@ A full-featured Restaurant Management Web Application built with Microservices A
 - Docker + Kubernetes (container orchestration)
 - GitHub Actions / GitLab CI for CI/CD
 
-## 📦 Microservices
+## Microservices
 
 | Service         | Description                                                         |
 |-----------------|---------------------------------------------------------------------|
