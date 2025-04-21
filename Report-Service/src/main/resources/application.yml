@@ -1,0 +1,13 @@
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+
+# Optional - để set info như title, description
+info:
+  title: Restaurant API
+  description: API for managing orders, menus, tables...
+  version: 1.0
