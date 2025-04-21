@@ -1,6 +1,6 @@
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /api/kitchens/v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
   default-consumes-media-type: application/json

@@ -6,6 +6,7 @@ import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+//cấu hình các route thủ công qua Java DSL
 @Configuration
 public class GatewayConfig {
     @Bean

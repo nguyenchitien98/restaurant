@@ -15,3 +15,64 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
 
+# Cấu hình Swagger cho gateway
+springdoc:
+    swagger-ui:
+      enabled: true
+      path: /swagger-ui.html
+      urls:
+      - name: Menu Service
+        url: /api/menus/v3/api-docs
+      - name: Order Service
+        url: /api/orders/v3/api-docs
+      - name: kitchen-service
+        url: /api/kitchens/v3/api-docs
+      - name: invoice-service
+        url: /api/invoice/v3/api-docs
+      - name: reports-service
+        url: /api/reports/v3/api-docs
+      - name: users-service
+        url: /api/users/v3/api-docs
+
+
+
+## Cấu hình route như bình thường trong file yml của gate way
+#spring:
+#  cloud:
+#    gateway:
+#      routes:
+#        - id: order-service
+#          uri: lb://ORDER-SERVICE
+#          predicates:
+#            - Path=/order-service/**
+#        - id: menu-service
+#          uri: lb://MENU-SERVICE
+#          predicates:
+#            - Path=/menu-service/**
+#        - id: kitchen-service
+#          uri: lb://KITCHEN-SERVICE
+#          predicates:
+#            - Path=/kitchen-service/**
+
+#spring:
+#  application:
+#    name: api-gateway
+#  cloud:
+#    gateway:
+#      routes:
+#        - id: order
+#          uri: http://localhost:8083
+#          predicates:
+#            - Path=/api/orders/**, /api/tables/**, /api/order-details/**
+#        - id: menu
+#          uri: http://localhost:8082
+#          predicates:
+#            - Path=/api/menus/**, /uploads/**
+#        - id: kitchen
+#          uri: http://localhost:8084
+#          predicates:
+#            - Path=/api/kitchens/**
+#        - id: invoice
+#          uri: http://localhost:8085
+#          predicates:
+#            - Path=/api/invoice/**
