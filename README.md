@@ -1,8 +1,8 @@
-# 🍽️ Restaurant Management System
+# Restaurant Management System
 
 A full-featured Restaurant Management Web Application built with Microservices Architecture. The system helps restaurant staff manage orders, tables, kitchen workflow, menu, billing, and real-time revenue reports.
 
-## 🚀 Features
+## Features
 
 - Manage tables, menu items, and user roles (admin, waiter, chef)
 - Create, update, and process orders in real-time
@@ -17,6 +17,58 @@ A full-featured Restaurant Management Web Application built with Microservices A
 - CI/CD ready
 
 ##  System Architecture
+[React Frontend]
+|
+v
+[API Gateway]  <-- optional
+|
+v
+[Spring Boot Microservices]
+├── 🧾 Order Service
+│    ├─ REST: /api/orders (create, update, get)
+│    ├─ Sends OrderDetails (unique menuId) to Kafka → Kitchen Service
+│    └─ Calls Menu Service (via Kafka) to get menuName
+│
+├── 🍽️ Kitchen Service
+│    ├─ Consumes Kafka message from Order Service
+│    ├─ Sends status updates via WebSocket to frontend
+│    └─ Can update dish status (e.g. PREPARING → DONE)
+│
+├── 📋 Menu Service
+│    ├─ CRUD menu items (REST API)
+│    ├─ Listens to Kafka for menuId list and returns menuNames
+│
+├── 💰 Invoice Service
+│    ├─ Create invoice from Order
+│    ├─ Store totalAmount, createdAt
+│    └─ Sends revenue to Kafka topic
+│
+└── 📈 Report Service
+├─ Listens to revenue Kafka topic
+├─ Aggregates monthly revenue via gRPC call to Invoice Service
+└─ Pushes real-time updates via WebSocket to frontend
+
+## Communication Flow Between Services
+[User → React UI]
+↓ (REST)
+[Order Service]
+↓ (Kafka: order.details → kitchen)
+[Kitchen Service]
+↓ (WebSocket)
+[React UI Kitchen Dashboard]
+
+[Order Service]
+→ Kafka: menuId list
+[Menu Service]
+→ Kafka: menuName mapping
+
+[Invoice Service]
+→ Kafka: revenue data
+[Report Service]
+→ WebSocket → React UI Report
+
+[Report Service]
+→ gRPC → Invoice Service (lấy thống kê theo tháng)
 
 ## 🛠️ Tech Stack
 
@@ -42,7 +94,7 @@ A full-featured Restaurant Management Web Application built with Microservices A
 - Docker + Kubernetes (container orchestration)
 - GitHub Actions / GitLab CI for CI/CD
 
-## 📦 Microservices
+## Microservices
 
 | Service         | Description                                                         |
 |-----------------|---------------------------------------------------------------------|
@@ -53,7 +105,7 @@ A full-featured Restaurant Management Web Application built with Microservices A
 | Invoice Service | Generates invoices and calculates revenue                           |
 | Report Service  | Receives revenue data via Kafka and updates dashboard via WebSocket |
 
-## 🔧 How to Run (Local)
+## How to Run (Local)
 
 1. **Clone the project**
 
