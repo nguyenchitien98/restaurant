@@ -17,36 +17,16 @@ A full-featured Restaurant Management Web Application built with Microservices A
 - CI/CD ready
 
 ##  System Architecture
-[React Frontend]
-|
-v
-[API Gateway]  <-- optional
-|
-v
-[Spring Boot Microservices]
-├── 🧾 Order Service
-│    ├─ REST: /api/orders (create, update, get)
-│    ├─ Sends OrderDetails (unique menuId) to Kafka → Kitchen Service
-│    └─ Calls Menu Service (via Kafka) to get menuName
-│
-├── 🍽️ Kitchen Service
-│    ├─ Consumes Kafka message from Order Service
-│    ├─ Sends status updates via WebSocket to frontend
-│    └─ Can update dish status (e.g. PREPARING → DONE)
-│
-├── 📋 Menu Service
-│    ├─ CRUD menu items (REST API)
-│    ├─ Listens to Kafka for menuId list and returns menuNames
-│
-├── 💰 Invoice Service
-│    ├─ Create invoice from Order
-│    ├─ Store totalAmount, createdAt
-│    └─ Sends revenue to Kafka topic
-│
-└── 📈 Report Service
-├─ Listens to revenue Kafka topic
-├─ Aggregates monthly revenue via gRPC call to Invoice Service
-└─ Pushes real-time updates via WebSocket to frontend
+            [ React Frontend UI ]
+                    |
+    ┌───────────────┼────────────────┬────────────────────────────┐
+    │               │                │                            │
+    Waiter UI      Kitchen UI        Cashier UI                  Admin UI
+    (Order)     (Real-time WS)     (Invoice/Report)           (CRUD Tables/Menu/Users)
+
+## 🗺️ System Architecture Diagram
+
+![System Architecture](./architecture.png)
 
 ## Communication Flow Between Services
 [User → React UI]
