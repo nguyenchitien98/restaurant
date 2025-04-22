@@ -1,31 +1,105 @@
 import { useState,useEffect, useRef } from "react";
+import axios from "axios";
+
+const statusMap = {
+  EMPTY: "Trống",
+  OCCUPIED: "Đang sử dụng",
+  RESERVED: "Đã đặt trước"
+};
+
+const statusReverseMap = {
+  "Trống": "EMPTY",
+  "Đang sử dụng": "OCCUPIED",
+  "Đã đặt trước": "RESERVED"
+};
+
+const formatReservedAt = (datetimeString) => {
+  if (!datetimeString) return "";
+  const date = new Date(datetimeString);
+  const datePart = date.toLocaleDateString("vi-VN");
+  const timePart = date.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${datePart} ${timePart}`;
+};
 
 const ManageTablesPage = () => {
-  const [tables, setTables] = useState([
-    { id: 1, name: "Bàn 1", capacity: 4, status: "Trống", note: "", reservedAt: "" },
-    { id: 2, name: "Bàn 2", capacity: 6, status: "Đang sử dụng", note: "Khách VIP", reservedAt: "" },
-  ]);
+  const [tables, setTables] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const audioRef = useRef(null);
 
   const [form, setForm] = useState({
-    name: "",
-    capacity: "",
-    status: "Trống",
-    note: "",
-    reservedDate: "",
-    reservedTime: ""
-  });
-
-  const [filterReservedDate, setFilterReservedDate] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  table_number: "",
+  capacity: "",
+  status: "Trống",
+  note: "",
+  reservedDate: "",
+  reservedTime: ""
+});
 
   const [filterStatus, setFilterStatus] = useState("Tất cả");
+  const [filterReservedDate, setFilterReservedDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [reminders, setReminders] = useState([]);
   const [showReminder, setShowReminder] = useState(true);
 
-  const audioRef = useRef(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
+  const handleChangeStatus = async (tableId, newStatusLabel) => {
+  const confirm = window.confirm("Bạn có chắc muốn cập nhật trạng thái?");
+  if (!confirm) return;
+
+  try {
+    const backendStatus = statusReverseMap[newStatusLabel];
+
+    await axios.put("http://localhost:8080/api/tables/status", {
+      tableId,
+      status: backendStatus
+    });
+
+    // Cập nhật lại state frontend
+    setTables(prev =>
+      prev.map(t => t.id === tableId ? { ...t, status: newStatusLabel } : t)
+    );
+
+    alert("Cập nhật trạng thái thành công!");
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái:", error);
+    alert("Đã xảy ra lỗi khi cập nhật trạng thái.");
+  }
+};
+
+        // Gọi API lấy danh sách bàn
+    const fetchTables = async () => {
+    try {
+      const res = await axios.get("http://localhost:8080/api/tables");
+      const formatted = res.data.map((t) => ({
+        id: t.table_id,
+        table_number: `Bàn ${t.table_number}`,
+        capacity: t.capacity,
+        status: statusMap[t.status] || "Không xác định",
+        note: t.note,
+        // reservedAt: t.reserved_at ? t.reserved_at : "",
+        reservedAt: t.reserved_at ? formatReservedAt(t.reserved_at) : "",
+        orders: t.orders || [],
+      }));
+      setTables(formatted);
+        } catch (err) {
+          console.error("Lỗi khi load danh sách bàn:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        fetchTables();
+      }, []);
+
+      
+
+  // Check reminders 
    useEffect(() => {
     const checkReminders = () => {
       const now = new Date();
@@ -52,69 +126,106 @@ const ManageTablesPage = () => {
   }, [tables]);
 
   const resetForm = () => {
-    setForm({ name: "", capacity: "", status: "Trống", note: "", reservedDate: "", reservedTime: "" });
+    setForm({
+            table_number: "",
+            capacity: "",
+            status: "Trống",
+            note: "",
+            reservedDate: "",
+            reservedTime: ""
+          });
     setIsEditing(false);
     setEditingId(null);
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const { name, value } = e.target;
+  setForm(prevForm => ({
+    ...prevForm,
+    [name]: value
+  }));
+};
+
+ const handleAdd = async () => {
+    if (!form.table_number || !form.capacity) return;
+    try {
+      const backendStatus = statusReverseMap[form.status];
+      await axios.post("http://localhost:8080/api/tables", {
+        table_number: parseInt(form.table_number),
+        capacity: parseInt(form.capacity),
+        status: backendStatus,
+        note: form.note
+      });
+      fetchTables();
+      resetForm();
+      alert("Thêm bàn thành công!");
+    } catch (error) {
+      console.error("Lỗi khi thêm bàn:", error);
+      alert("Thêm bàn thất bại.");
+    }
   };
 
-  const handleAdd = () => {
-    if (!form.name || !form.capacity) return;
+  const handleUpdate = async () => {
     const reservedAt = form.status === "Đã đặt trước" && form.reservedDate && form.reservedTime
-      ? `${form.reservedDate} ${form.reservedTime}`
-      : "";
-    const newTable = {
-      id: Date.now(),
-      name: form.name,
-      capacity: parseInt(form.capacity),
-      status: form.status,
-      note: form.note,
-      reservedAt
-    };
-    setTables([...tables, newTable]);
-    resetForm();
+      ? `${form.reservedDate}T${form.reservedTime}`
+      : null;
+    try {
+      const backendStatus = statusReverseMap[form.status];
+      await axios.put(`http://localhost:8080/api/tables/${editingId}`, {
+        table_number: parseInt(form.table_number),
+        capacity: parseInt(form.capacity),
+        status: backendStatus,
+        note: form.note,
+        reserved_at: reservedAt
+      },{
+  headers: {
+    "Content-Type": "application/json"}
+  });
+      fetchTables();
+      resetForm();
+      alert("Cập nhật bàn thành công!");
+    } catch (error) {
+      console.error("Lỗi khi cập nhật bàn:", error);
+      alert("Cập nhật bàn thất bại.");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Bạn có chắc chắn muốn xoá bàn này không?");
+    if (!confirmDelete) return;
+    try {
+      await axios.delete(`http://localhost:8080/api/tables/${id}`);
+      fetchTables();
+      alert("Xoá bàn thành công!");
+    } catch (error) {
+      console.error("Lỗi khi xoá bàn:", error);
+      alert("Xoá bàn thất bại.");
+    }
   };
 
   const handleEdit = (table) => {
-    const [reservedDate = "", reservedTime = ""] = table.reservedAt?.split(" ") || [];
+     console.log('Editing table:', table);
+    const [reservedDate = "", reservedTime = ""] = table.reservedAt?.split("T") || [];
+
+    // Loại bỏ tiền tố "Bàn " từ table_number
+  const tableNumber = table.table_number.replace('Bàn ', '');
+
     setForm({
-      name: table.name,
-      capacity: table.capacity,
-      status: table.status,
-      note: table.note,
-      reservedDate,
-      reservedTime
-    });
+    table_number: tableNumber || "",  // Đảm bảo không có null
+    capacity: table.capacity ? table.capacity.toString() : "",  // Đảm bảo không có null
+    status: table.status || "",
+    note: table.note || "",
+    reservedDate: reservedDate || "",  // Đảm bảo không có null
+    reservedTime: reservedTime || "",  // Đảm bảo không có null
+  });
     setIsEditing(true);
     setEditingId(table.id);
   };
 
-  const handleUpdate = () => {
-    const reservedAt = form.status === "Đã đặt trước" && form.reservedDate && form.reservedTime
-      ? `${form.reservedDate} ${form.reservedTime}`
-      : "";
-    setTables(
-      tables.map((t) =>
-        t.id === editingId ? {
-          ...t,
-          ...form,
-          capacity: parseInt(form.capacity),
-          reservedAt
-        } : t
-      )
-    );
-    resetForm();
-  };
 
-  const handleDelete = (id) => {
-    const confirmDelete = window.confirm("Bạn có chắc chắn muốn xoá bàn này không?");
-    if (confirmDelete) {
-      setTables(tables.filter((t) => t.id !== id));
-    }
-  };
+  if (loading) {
+    return <div className="p-4">Đang tải dữ liệu bàn ăn...</div>;
+  }
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -131,7 +242,7 @@ const ManageTablesPage = () => {
 
   const filteredTables = tables.filter((t) => {
     const matchStatus = filterStatus === "Tất cả" || t.status === filterStatus;
-    const matchSearch = t.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchSearch = typeof t.table_number === "string" && t.table_number.toLowerCase().includes(searchTerm.toLowerCase());
     return matchStatus && matchSearch;
   });
 
@@ -151,7 +262,7 @@ const ManageTablesPage = () => {
           </div>
           {reminders.map((t) => (
             <div key={t.id}>
-              <p>🪑 {t.name} - ⏰ {t.reservedAt}</p>
+              <p>🪑 {t.table_number} - ⏰ {t.reservedAt}</p>
             </div>
           ))}
         </div>
@@ -174,12 +285,12 @@ const ManageTablesPage = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
         <input
-          type="text"
-          name="name"
-          value={form.name}
+          type="number"
+          name="table_number"
+          value={form.table_number}
           onChange={handleChange}
-          placeholder="Tên bàn"
-          className="border p-2 rounded"
+          placeholder="Số bàn"
+          className="border p-2 rounded text-gray-700"
         />
 
         <input
@@ -188,18 +299,22 @@ const ManageTablesPage = () => {
           value={form.capacity}
           onChange={handleChange}
           placeholder="Sức chứa"
-          className="border p-2 rounded"
+          className="border p-2 rounded  text-gray-700"
         />
 
         <select
           name="status"
           value={form.status}
           onChange={handleChange}
-          className="border p-2 rounded text-gray-400"
+          className="border p-2 rounded text-gray-700"
         >
           <option value="Trống">Trống</option>
-          <option value="Đang sử dụng">Đang sử dụng</option>
-          <option value="Đã đặt trước">Đã đặt trước</option>
+          {isEditing && (
+            <>
+              <option value="Đang sử dụng">Đang sử dụng</option>
+              <option value="Đã đặt trước">Đã đặt trước</option>
+            </>
+          )}
         </select>
 
         <input
@@ -208,7 +323,7 @@ const ManageTablesPage = () => {
           value={form.note}
           onChange={handleChange}
           placeholder="Ghi chú"
-          className="border p-2 rounded"
+          className="border p-2 rounded  text-gray-700"
         />
 
         {form.status === "Đã đặt trước" && (
@@ -261,7 +376,7 @@ const ManageTablesPage = () => {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="border p-2 rounded w-full md:w-auto text-gray-400"
+          className="border p-2 rounded w-full md:w-auto  text-gray-700"
         >
           <option value="Tất cả">Tất cả trạng thái</option>
           <option value="Trống">Trống</option>
@@ -274,63 +389,99 @@ const ManageTablesPage = () => {
           placeholder="Tìm kiếm bàn..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="border p-2 rounded w-full md:w-64"
+          className="border p-2 rounded w-full md:w-64  text-gray-700"
         />
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full table-auto border text-sm md:text-base">
-          <thead className="bg-gray-400">
+            {/* 🖥️ Table cho desktop & tablet */}
+      <div className="w-full overflow-x-auto hidden md:block">
+        <table className="min-w-[700px] w-full table-auto border border-gray-300 text-sm">
+          <thead className="bg-gray-400 text-white">
             <tr>
-              <th className="border px-2 py-2">STT</th>
-              <th className="border px-2 py-2">Tên bàn</th>
-              <th className="border px-2 py-2">Sức chứa</th>
-              <th className="border px-2 py-2">Trạng thái</th>
-              <th className="border px-2 py-2">Ghi chú</th>
-              <th className="border px-2 py-2">Thời gian đặt</th>
-              <th className="border px-2 py-2">Hành động</th>
+              <th className="border px-3 py-2">STT</th>
+              <th className="border px-3 py-2">Tên bàn</th>
+              <th className="border px-3 py-2">Sức chứa</th>
+              <th className="border px-3 py-2">Trạng thái</th>
+              <th className="border px-3 py-2">Ghi chú</th>
+              <th className="border px-3 py-2">Thời gian đặt</th>
+              <th className="border px-3 py-2">Hành động</th>
             </tr>
           </thead>
           <tbody>
             {filteredTables.map((table, index) => (
-              <tr key={table.id} className="hover:bg-gray-600">
-                <td
-                  className="border px-2 py-2 text-center cursor-pointer text-white"
-                  onClick={() => handleEdit(table)}
-                >
-                  {index + 1}
-                </td>
-                <td
-                  className="border px-2 py-2 cursor-pointer text-white"
-                  onClick={() => handleEdit(table)}
-                >
-                  {table.name}
-                </td>
-                <td className="border px-2 py-2 text-center">{table.capacity}</td>
-                <td className={`border px-2 py-2 text-center ${getStatusColor(table.status)}`}>
-                  {table.status}
-                </td>
-                <td className="border px-2 py-2">{table.note}</td>
-                <td className="border px-2 py-2 text-center">{table.reservedAt || "-"}</td>
-                <td className="border px-2 py-2 text-center space-x-2">
-                  <button
-                    onClick={() => handleEdit(table)}
-                    className="bg-yellow-400 text-white px-2 py-1 rounded"
+              <tr key={table.id} className="hover:bg-gray-600 text-white">
+                <td className="border px-3 py-2 text-center cursor-pointer" onClick={() => handleEdit(table)}>{index + 1}</td>
+                <td className="border px-3 py-2 cursor-pointer" onClick={() => handleEdit(table)}>{table.table_number}</td>
+                <td className="border px-3 py-2 text-center">{table.capacity}</td>
+                <td className="border px-3 py-2 text-center">
+                  <select
+                    value={table.status}
+                    onChange={(e) => handleChangeStatus(table.id, e.target.value)}
+                    className={`w-full border rounded px-2 py-1 text-center ${getStatusColor(table.status)}`}
                   >
-                    Sửa
-                  </button>
-                  <button
-                    onClick={() => handleDelete(table.id)}
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                  >
-                    Xoá
-                  </button>
+                    <option value="Trống">Trống</option>
+                    <option value="Đang sử dụng">Đang sử dụng</option>
+                    <option value="Đã đặt trước">Đã đặt trước</option>
+                  </select>
+                </td>
+                <td className="border px-3 py-2 whitespace-pre-wrap break-words">{table.note || "-"}</td>
+                <td className="border px-3 py-2 text-center">{table.reservedAt || "-"}</td>
+                <td className="border px-3 py-2 text-center space-x-2">
+                  <button onClick={() => handleEdit(table)} className="bg-yellow-400 text-white px-3 py-1 rounded">Sửa</button>
+                  <button onClick={() => handleDelete(table.id)} className="bg-red-500 text-white px-3 py-1 rounded">Xoá</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+          {/* 📱 Card view cho mobile */}
+          <div className="block md:hidden space-y-4">
+      {filteredTables.map((table, index) => (
+        <div key={table.id} className="border rounded-lg p-3 bg-white shadow text-sm text-gray-800">
+          <div className="font-semibold mb-2 text-gray-700">🪑 Bàn {table.table_number}</div>
+          
+          <div><span className="font-medium">STT:</span> {index + 1}</div>
+          <div><span className="font-medium">Sức chứa:</span> {table.capacity}</div>
+          
+          <div className="my-2">
+            <label className="font-medium block mb-1">Trạng thái:</label>
+            <select
+              value={table.status}
+              onChange={(e) => handleChangeStatus(table.id, e.target.value)}
+              className={`w-full border rounded px-2 py-1 text-gray-800 ${getStatusColor(table.status)}`}
+            >
+              <option value="Trống">Trống</option>
+              <option value="Đang sử dụng">Đang sử dụng</option>
+              <option value="Đã đặt trước">Đã đặt trước</option>
+            </select>
+          </div>
+          
+          <div>
+            <span className="font-medium">Ghi chú:</span>
+            <div className="whitespace-pre-wrap break-words">{table.note || "-"}</div>
+          </div>
+          
+          <div><span className="font-medium">Thời gian đặt:</span> {table.reservedAt || "-"}</div>
+          
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() => handleEdit(table)}
+              className="flex-1 bg-yellow-400 text-gray-900 font-medium px-3 py-2 rounded"
+            >
+              Sửa
+            </button>
+            <button
+              onClick={() => handleDelete(table.id)}
+              className="flex-1 bg-red-500 text-white font-medium px-3 py-2 rounded"
+            >
+              Xoá
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
       <div className="mt-10">
         <h2 className="text-xl font-bold mb-2">📅 Lịch bàn đã đặt</h2>
 
@@ -357,8 +508,8 @@ const ManageTablesPage = () => {
               if (!filterReservedDate) return true;
               return t.reservedAt.startsWith(filterReservedDate);
             }).map((t) => (
-              <div key={t.id} className="border p-4 rounded bg-yellow-50">
-                <p className="font-semibold">🪑 {t.name} - Sức chứa: {t.capacity}</p>
+              <div key={t.id} className="border p-4 rounded bg-yellow-50 text-gray-700">
+                <p className="font-semibold">🪑 {t.table_number} - Sức chứa: {t.capacity}</p>
                 <p>⏰ Thời gian: {t.reservedAt}</p>
                 {t.note && <p>📝 Ghi chú: {t.note}</p>}
               </div>
