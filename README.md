@@ -24,7 +24,7 @@ A full-featured Restaurant Management Web Application built with Microservices A
     Waiter UI      Kitchen UI        Cashier UI                  Admin UI
     (Order)     (Real-time WS)     (Invoice/Report)           (CRUD Tables/Menu/Users)
 
-## 🗺️ System Architecture Diagram
+## System Architecture Diagram
 
 ![System Architecture](./architecture.png)
 
@@ -97,6 +97,31 @@ Start services using Docker Compose
 docker-compose up --build
 
 ```
+## Application Screenshots
+### Order Management Screen
+#### Displays all current orders, with options to edit, view details, and update status.
+<p align="center"> <img src="img/quanlyorder.png" alt="Order Management" width="80%"> </p>
+
+### After Placing an Order
+#### An example of how an order appears after submission.
+<p align="center"> <img src="img/saukhiorder.png" alt="Order Management" width="80%"> </p>
+
+### Table Management Screen
+#### Manage restaurant tables, view status (occupied/available), capacity, and assign orders.
+<p align="center"> <img src="img/quanlyban.png" alt="Order Management" width="80%"> </p>
+
+### Menu Management Screen
+#### CRUD interface for managing food and drink items on the menu.
+<p align="center"> <img src="img/quanlyban.png" alt="Order Management" width="80%"> </p>
+
+### Kitchen Management Screen
+#### Monitor food preparation process in real-time. Orders are sent from Order Service via Kafka and displayed here using WebSocket.
+<p align="center"> <img src="img/quanlybep.png" alt="Order Management" width="80%"> </p>
+
+### After Receiving an Order in Kitchen
+#### Live update when new orders arrive from the Order Service.
+<p align="center"> <img src="img/khicoorder.png" alt="Order Management" width="80%"> </p>
+
 
 ## Author
 Nguyễn Chí Tiến - Fullstack Developer

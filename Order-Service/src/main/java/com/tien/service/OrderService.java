@@ -56,6 +56,7 @@ public class OrderService {
             }
             orderDetail.setOrder(order);
             orderDetail.setStatus(OrderDetailStatus.PENDING);
+            orderDetail.setCreatedAt(LocalDateTime.now());
         }
 
         order.setTable(table);
@@ -88,12 +89,13 @@ public class OrderService {
                             tableNumber,
                             detail.getQuantity(),
                             detail.getStatus().name(),
-                            detail.getCreatedAt()
+                            LocalDateTime.now()
                     );
                 })
                 .collect(Collectors.toList());
 
         for (OrderDetailResponse item : kitchenItems) {
+            System.out.println(item);
             messagingTemplate.convertAndSend("/topic/kitchen", item);
         }
 
